@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="JSmol.min.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+var myJmol, loadscript;
+
+jmol_isReady = function(applet) {
+	//Jmol._getElement(applet, "appletdiv").style.border="1px solid lightblue";
+}
+
+var xxxx = "1HWG";
+var initscript = 'h2oOn=true;set animframecallback "jmolscript:if (!selectionHalos) {select model=_modelNumber}";'
++'set errorCallback "errorCallback";'
++'set defaultloadscript "isDssp = false;set defaultVDW babel;if(!h2oOn){display !water}";'
++'set zoomlarge true;set echo top left;echo loading XXXX...;refresh;'
++'load "http://bioinf.ddns.net/XXXX.pdb";set echo top center;echo XXXX;'
++'spacefill off;wireframe off;cartoons on;color structure;'
+initscript = initscript.replace(/XXXX/g, xxxx)
+
+
+
+var myInfo = {
+	width: "100%",
+	height: 560,
+	debug: false,
+	color: "black",
+	addSelectionOptions: false,
+	//serverURL: "http://chemapps.stolaf.edu/jmol/jsmol/php/jsmol.php",
+	//serverURL: "http://www.rcsb.org/pdb/files/1HWG.pdb",
+	serverURL: "http://bioinf.ddns.net/jsmol.php",
+	use: "HTML5",
+	j2sPath: "j2s",
+	readyFunction: jmol_isReady,
+	//script: "set antialiasDisplay;load http://www.rcsb.org/pdb/files/1HGW.pdb",
+	//script: initscript,
+	//jarPath: "java",
+	//jarFile: (useSignedApplet ? "JmolAppletSigned.jar" : "JmolApplet.jar"),
+	//isSigned: useSignedApplet,
+	//disableJ2SLoadMonitor: true,
+	disableInitialConsole: true,
+	loadStructCallback: "myFunction",
+	//defaultModel: "$dopamine",
+	//console: "myJmol" // default will be jmolApplet0_infodiv
+};
+
+//Jmol.getApplet("myJmol", myInfo);
+function myFunction(a,b,c,d,f) {
+  //document.getElementById("cont").innerHTML = Jmol.getAppletHtml("myJmol", myInfo);
+  //document.getElementById("place2").innerHTML = Jmol.getAppletHtml("jmol2", Info);
+  //Jmol.showInfo = function("myJmol", true);
+  //document.getElementById("console").innerHTML = JSON.stringify(Jmol.getPropertyAsArray(myJmol, "atomInfo", "all"));
+  //alert("Loaded: '" + b + "' Succesfully!");
+}
+
+function jmolButton(script, text) {Jmol.jmolButton(myJmol, script,text)};
+function jmolHtml(s) { document.write(s) };
+function jmolBr() { jmolHtml("<br />") };
+
+function load(mname) {
+	xxxx = mname;
+	loadscript = 'h2oOn=true;set animframecallback "jmolscript:if (!selectionHalos) {select model=_modelNumber}";'
+		+'set errorCallback "errorCallback";'
+		+'set defaultloadscript "isDssp = false;set defaultVDW babel;if(!h2oOn){display !water}";'
+		+'set zoomlarge true;set echo top left;echo loading XXXX...;refresh;'
+		+'load "http://bioinf.ddns.net/XXXX.pdb";set echo top center;echo XXXX;'
+		+'spacefill off;wireframe off;cartoons on;color structure;'
+	loadscript = loadscript.replace(/XXXX/g, xxxx)
+	
+	Jmol.script(myJmol, loadscript);
+}
+
+
+function errorCallback() {
+	alert("Error Retrieving File");
+}
+</script>
+<div id="cont">
+	<script type="text/javascript">
+
+		myJmol = Jmol.getApplet("myJmol", myInfo);
+		//Jmol.showInfo(myJmol, true);
+		//Jmol.setInfo(myJmol, "console", true);
+		//document.getElementById("console").innerHTML = Jmol.getPropertyAsArray(myJmol, "appletInfo");
+	</script>
+	<div id="options">
+		<script>
+			Jmol.setButtonCss(null,"style='width:120px'")
+			jmolButton("color cpk")
+			jmolButton("color group")
+			jmolButton("color amino")
+			jmolButton("color structure")
+			jmolBr()
+			jmolButton("trace only")
+			jmolButton("cartoon only")
+			jmolButton("backbone only")
+			jmolButton("spacefill only;spacefill 23%;wireframe 0.15","ball&stick")
+			jmolBr()
+			Jmol.setButtonCss(null,"style='width:160px'")
+			jmolButton("Ramachandran relative")
+			jmolButton("Quaternion difference")
+			jmolButton("write IMAGE ?.png","Save PNG")
+			jmolBr()
+			Jmol.setButtonCss(null,"style='width:100px'")
+		</script>
+	</div>
+</div>
+<style>
+html {
+	height: 100%;
+	width: 100%;
+	padding: 0;
+	margin: 0;
+}
+
+body {
+	height: 100%;
+	width: 100%;
+	padding: 0;
+	margin: 0;
+}
+
+#cont {
+	text-align: center;
+	height: 100%;
+	width: 100%;
+}
+
+#options {
+	margin-top: 15px;
+	text-align: center;
+}
+</style>
+</body>
+</html>
