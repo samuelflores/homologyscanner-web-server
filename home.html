@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Home Page</title>
+</head>
+<body>
+	<div id="home-mid">
+		<div id="welcome-div" class="k-header">
+			<h1>
+				Welcome to the homologyScanner Web Tool
+			</h1>
+			<div id="welcome-content">
+				<p class="text">
+					The homologyScanner Web tool provides a helpful visualization and evaluation tool for macromolecular mutagenesis structures. As a macromolecular designer you can easily retrieve and visualize created projects containing several hundreds of mutation structures and keep track of your evaluation progress by creating notes for each mutation.
+				</p>
+				<h3><u>What is homologyScanner</u></h3>
+				<p class="text">
+					homologyScanner improves on the precision of a FoldX (Guerois et al., JMB 2002) prediction of change in protein-protein binding energy upon mutation. It does this by finding additional coordinate sets in the Protein Data Bank, and repeating the calculation. You are only required to provide a PDB ID, specify which chains are relevant, which chains belong to subunit 1 vs subunit 2, and what mutation you wish to make. homologyScanner finds all structures which have the chains you requested, with similar tertiary and quaternary structure. It then translates your mutation to the numbering system of all such structures found, and repeats the binding calculation. Averaging over all these calculations leads to an improvement in precision. Read about it in the upcoming Flores et al. paper, in 2018 or (worst case) 2019. For more information please visit the About page.
+				</p>
+				<h3><u>Projects and mutations</u></h3>
+				<p class="text">
+					In the Tool page, select a project and then a specific mutation. You can also use both scrollbars for searching a specific project or mutation. When the mutation has been selected press “load” to get the structure.
+				</p>
+				<h3><u>Visualization tool</u></h3>
+				<p class="text">
+					The visualization tool use Jsmol, an extension of Jmol which support many functionalities for 3D viewing. Some of the functionalities are represented in the Project page. However, to use further functionalities simply right click on the structure representing window.
+				</p>
+				<h3><u>Project and mutation information</u></h3>
+				<p class="text">
+					To the left of the Jsmol window you will find a collapsible information tab. Here you can see the parameter used for the simulation and necessary information about the mutation. For example, the mutation information contains the ΔΔG of the mutation, where ΔΔG = ΔG(mutation) - ΔG(wildtype). 
+					An negative ΔΔG could imply increased affinity between complex and ligand, for example.
+				</p>
+				<h3><u>Keeping notes</u></h3>
+				<p class="text">
+					[This feature may be inactivated] If you are logged in, you can press the “evaluate” button after you have selected a mutation to create a note for that mutation. Later on, if you go back to the mutation and press evaluate your note will be still be there.  You can edit the notes as you want.
+				</p>
+			</div>
+		</div>
+		<script>
+        </script>
+	</div>
+	<style>
+		html {
+			font-family: Arial, Helvetica, sans-serif;
+		}
+		
+		html,body {
+			height:100%;
+			width: 100%;
+			margin: 0;
+			padding: 0;
+		}
+		
+		#home-mid {
+			margin: 0;
+			height: 100%;
+			background: url("images/WAL-5.jpg") no-repeat center center fixed;
+			background-size: cover;
+			text-align:center;
+		}
+
+		#welcome-div {
+			border-radius: 10px 10px 10px 10px;
+			border-style: solid;
+			border-width: 1px;
+			overflow: auto;
+			width: 50%;
+			height: 75%;
+			margin: auto;
+			padding: 20px 20px 10px 20px;
+			opacity: 0.8;
+			position: relative;
+			top: 10%;
+			text-align: center;
+		}
+		
+		#welcome-content {
+			margin: 0 auto;
+			padding: 15px 0;
+			text-align: left;
+		}
+	</style>
+</body>
+</html>

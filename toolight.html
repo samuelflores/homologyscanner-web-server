@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ZEMu Web Tool</title>
+	<script src="js/jquery.min.js"></script>
+	<script src="JSmol.min.js"></script>
+	<script src="js/kendo.ui.core.min.js"></script>
+</head>
+<body>
+	<div id="toolbar"></div>
+	<div id="slide-in-info">
+		<a id="slide-in-handle" href="#">Info</a>
+		<div id="projectInfo">
+			<table>
+				<tr>
+					<th>Name:</th>
+					<td>LIMS-test</td>
+				</tr>
+				<tr>
+					<th>Status:</th>
+					<td>Completed</td>
+				</tr>
+				<tr>
+					<th>Date:</th>
+					<td>2015-01-18</td>
+				</tr>
+				<tr>
+					<th>Wild Type:</th>
+					<td>A-37-K</td>
+				</tr>
+				<tr>
+					<th>No of Mutations:</th>
+					<td>27</td>
+				</tr>
+				<tr>
+					<th>Interface Interval:</th>
+					<td>152.0</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<div id="jsmol-div"></div>
+	<div id="evalWindow"></div>
+	<button id="win-btn" class="k-button">Open</button>
+	<script>
+		var myJmol, loadscript, projectsCB, mutationsCB;
+		var popupNotification = $("#popupNotification").kendoNotification().data("kendoNotification");
+
+		jmol_isReady = function(applet) {
+			//Jmol._getElement(applet, "appletdiv").style.border="1px solid lightblue";
+			//popupNotification.show("App Loaded", "info");
+			//$("#loading-img").fadeIn("slow");
+		}
+
+		var myInfo = {
+			width: "100%",
+			height: "100%",
+			debug: false,
+			color: "black",
+			addSelectionOptions: false,
+			serverURL: "http://bioinf.ddns.net/jsmol.php",
+			use: "HTML5",
+			j2sPath: "j2s",
+			readyFunction: jmol_isReady,
+			disableInitialConsole: true,
+			loadStructCallback: "jsmolLoadStructCallback",
+		};
+		
+		function onProjectSelect(e) {
+			mutationsCB.enable(true);
+			mutationsCB.value("");
+			var dataSource = new kendo.data.DataSource({
+				transport: {
+					read: {
+						type: "POST",
+						url: "calls.php",
+						dataType: "json",
+						data: {restcall: 'getMutInfo',arguments: [e.item.text()]}
+					}
+				}
+			});
+			mutationsCB.setDataSource(dataSource);
+		}
+		
+		$("#toolbar").kendoToolBar({
+			items: [
+				{
+					template: "<span><label>Project:</label><input id='projectSelect' style='width: 220px;' /></span>",
+					overflow: "never"
+				},
+				{ type: "separator" },
+				{
+					template: "<span><label>Mutation:</label><input id='mutationSelect' style='width: 100px;' /></span>",
+					overflow: "never"
+				},
+				{ type: "separator" },
+				{ type: "button", text: "Load", overflow: "never" , click: load},
+				//{ type: "button", text: "Test", overflow: "never" , click: test},
+				{ type: "separator" },
+				{
+					type: "splitButton",
+					text: "Color Chain",
+					click: colorChain,
+					menuButtons: [
+						{ text: "Amino Acid", attributes: { "class": "menuBtns" }, click: colorAminoAcid },
+						{ text: "Group", attributes: { "class": "menuBtns" }, click: colorGroup },
+						{ text: "Structure", attributes: { "class": "menuBtns" }, click: colorStructure }
+					]
+				},
+				{ type: "separator" },
+				{
+					type: "splitButton",
+					text: "View Cartoon",
+					click: viewCartoon,
+					menuButtons: [
+						{ text: "Ball and Stick", attributes: { "class": "menuBtns" }, click: viewBallStick },
+						{ text: "Trace", attributes: { "class": "menuBtns" }, click: viewTrace },
+						{ text: "Backbone", attributes: { "class": "menuBtns" }, click: viewBackbone }
+					]
+				},
+				{ type: "separator" },
+				{
+					type: "splitButton",
+					text: "Save as PNG",
+					click: savePNG,
+					menuButtons: [
+						{ text: "Save as JPEG", attributes: { "class": "menuBtns" }, click: saveJPEG }
+					]
+				},
+				{ type: "separator" },
+				{ template: "<label>Spin:</label>" },
+				{
+					type: "buttonGroup",
+					buttons: [
+						{ text: "On", togglable: true, group: "spin", toggle: spinOn },
+						{ text: "Off", togglable: true, group: "spin", toggle: spinOff }
+					]
+				}
+			]
+		});
+		
+		function colorChain() {
+			Jmol.script(myJmol, "color chain");
+		}
+		
+		function colorAminoAcid() {
+			Jmol.script(myJmol, "color amino");
+		}
+		
+		function colorGroup() {
+			Jmol.script(myJmol, "color group");
+		}
+		
+		function colorStructure() {
+			Jmol.script(myJmol, "color structure");
+		}
+		
+		function viewCartoon() {
+			Jmol.script(myJmol, "cartoon only");
+		}
+		
+		function viewBallStick() {
+			Jmol.script(myJmol, "spacefill only;spacefill 23%;wireframe 0.15");
+		}
+		
+		function viewTrace() {
+			Jmol.script(myJmol, "trace only");
+		}
+		
+		function viewBackbone() {
+			Jmol.script(myJmol, "backbone only");
+		}
+		
+		function savePNG() {
+			Jmol.script(myJmol, "write IMAGE ?.png");
+		}
+		
+		function saveJPEG() {
+			Jmol.script(myJmol, "write IMAGE ?.jpg");
+		}
+		
+		function spinOn() {
+			Jmol.script(myJmol, "spin on");
+		}
+		
+		function spinOff() {
+			Jmol.script(myJmol, "spin off");
+		}
+		/*
+		function test() {
+			popupNotification.show("Info: " + projectsCB.value(), "info");
+		}*/
+		
+		$("#projectSelect").kendoComboBox({
+			dataTextField: "jobName",
+			dataValueField: "jobName",
+			placeholder: "Select Project...",
+			filter: "contains",
+			dataSource: {
+				transport: {
+					read: {
+						type: "POST",
+						url: "calls.php",
+						dataType: "json",
+						data: {restcall: 'getJobNames',arguments: [user]}
+					}
+				}
+			},
+			select: onProjectSelect
+		});
+		
+		projectsCB = $("#projectSelect").data("kendoComboBox");
+
+		$("#mutationSelect").kendoComboBox({
+			dataTextField: "mutationString",
+			dataValueField: "mutationString",
+			placeholder: "Mutation...",
+			filter: "contains"
+		});
+		
+		mutationsCB = $("#mutationSelect").data("kendoComboBox");
+		mutationsCB.enable(false);
+		
+		function load() {
+			if (!mutationsCB.text()){
+				popupNotification.show("Please select a mutation", "warning");
+			}else{
+				$("#loading-img").fadeIn("slow");
+				$.ajax({
+					type: "POST",
+					url: "calls.php",
+					dataType: 'json',
+					data: {restcall: 'getPdb', arguments: [projectsCB.value(), mutationsCB.value(), sID]},
+					success: function(data) {
+						popupNotification.show("File transfer successful", "success");
+						loadJsMol();
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+						popupNotification.show("Error: " + jqXHR.responseText, "error");
+						$("#loading-img").fadeOut("slow");
+					}
+				});
+			}
+		}
+		
+		function loadJsMol() {
+			xxxx = projectsCB.value() + "_" + mutationsCB.value();
+			loadscript = 'h2oOn=true;set animframecallback "jmolscript:if (!selectionHalos) {select model=_modelNumber}";'
+				+'set errorCallback "errorCallback";'
+				+'set defaultloadscript "isDssp = false;set defaultVDW babel;if(!h2oOn){display !water}";'
+				+'set zoomlarge false;color echo orange;set echo top left;echo Loading ' + mutationsCB.value() + '...;refresh;'
+				+'load "http://bioinf.ddns.net/temp/' + sID + '/XXXX.pdb";color echo orange;set echo top center;echo ' + mutationsCB.value() + ';'
+				+'spacefill off;wireframe off;cartoons on;color chain;'
+			loadscript = loadscript.replace(/XXXX/g, xxxx)
+			
+			Jmol.script(myJmol, loadscript);
+		}
+		
+		function jsmolLoadStructCallback() {
+			$("#loading-img").fadeOut("slow");
+		}
+		
+		function projectsCall() {
+			$.ajax({
+				type: "POST",
+				url: "calls.php",
+				dataType: 'json',
+				data: {restcall: 'getJobNames'},
+				success: function(data) {
+					alert(data);
+					projectsCB.setDataSource(data);
+					$("#loading-img").fadeOut("slow");
+				},
+				error: function(jqXHR, textStatus, errorThrown) {
+					popupNotification.show("Error: " + jqXHR.responseText, "error");
+					$("#loading-img").fadeOut("slow");
+				}
+			});
+		}
+		
+		var slide = kendo.fx($("#slide-in-info")).slideIn("left"),visible = true;
+
+		$("#slide-in-handle").click(function(e) {
+			if (visible) {
+				slide.reverse();
+			} else {
+				slide.play();
+			}
+			visible = !visible;
+			e.preventDefault();
+		});
+		
+		function winOpen() {
+			var win = $("#evalWindow");
+			win.kendoWindow({
+				width : "300px",
+				height : "200px",
+				position: {
+					top: 80,
+					left: 0
+				},
+				draggable: false,
+				title : "Evaluation",
+				visible: false,
+				close : function(e) {
+					$("#win-btn").fadeIn("slow");
+				}
+			});
+			win.data("kendoWindow").open();
+		}
+		
+		$("#win-btn").click(function() {
+			winOpen();
+			$(this).hide();
+		});
+		
+		$(document).ready(function() {
+			setTimeout(function() {
+				Jmol.setDocument(0);
+				Jmol.getApplet("myJmol", myInfo);
+				$("#jsmol-div").html(Jmol.getAppletHtml(myJmol));
+			}, 100);
+		});
+	</script>
+	<style>
+		html {
+			min-width: 800px;
+			min-height: 600px;
+			font-family: Arial, Helvetica, sans-serif;
+		}
+		
+		html,body {
+			height: 100%;
+			width: 100%;
+			margin: 0;
+			padding: 0;
+		}
+		
+		#toolbar {
+			font-size: 75%;
+			line-height: 28px;
+			height: 30px;
+		}
+		
+		.menuBtns {
+			font-size: 75%;
+		}
+		
+		#jsmol-div {
+			height: calc(100% - 32px);
+			width: 100%;
+			overflow: hidden;
+		}
+		
+		#slide-in-info {
+			position: absolute;
+			top: 80px;
+			left: 0;
+			width: 200px;
+			margin-left: -202px;
+			border: solid #171E28;
+			border-width: 1px 1px 0px 0;
+			background-color: #212A33;
+			color: white;
+			z-index: 99999;
+		}
+
+		#slide-in-handle {
+			position: absolute;
+			top: 75px;
+			left: 200px;
+			width: 15px;
+			height: 30px;
+			background-color: #F4AF03;
+			text-indent: -999em;
+		}
+		
+		#win-btn {
+			position: absolute;
+			cursor: pointer;
+			right: 30px;
+			bottom: 30px;
+			z-index: 99999;
+		}
+		
+		#evalWindow {
+		}
+		
+		#projectInfo {
+			position: relative;
+			width: 100%;
+			height: 70%;
+		}
+		
+		#projectInfo table {
+			border: 1px solid black;
+			-moz-box-sizing: border-box;
+			-webkit-box-sizing: border-box;
+			-ms-box-sizing: border-box;
+			box-sizing: border-box;
+		}
+		
+		#projectInfo th, td {
+			border: 1px solid black;
+		}
+	</style>
+</body>
+</html>

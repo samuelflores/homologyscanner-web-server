@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html>
+<META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
+<META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
+
+
+<head>
+    <title>ZEMu Web Tool</title>
+</head>
+<body>
+	<div id="toolbar"></div>
+	<div id="slide-in-info">
+		<a id="slide-in-handle" href="#"><img class="arrowIcon" src="images/transparentImg.png"></img></a>
+		<div id="projectInfo" class="k-block">
+			<div class="k-header k-shadow">Project Information</div>
+			<div id="pInfo">
+			</div>
+			<div class="k-header k-shadow">Mutation Information</div>
+			<div id="mInfo">
+				<ol class="mut-name-value">
+					<li>                    
+						<label for="WTString">Wild Type</label>
+						<span id="WTString"></span>
+					</li>
+					<li>
+						<label for="status">status</label>
+                                                <!-- id= is used to modify contents with javascript -->
+						<span id="status"></span>
+					</li>
+					<li>
+						<label for="currentPdbId">PDB ID</label>
+                                                <!-- id= is used to modify contents with javascript -->
+						<span id="currentPdbId"></span>
+					</li>
+				</ol>
+                                <!-- ol is ordered list. -->
+                                <!-- class is used to set properties in a style sheet. can also be used by javascript to make changes. -->
+				<ol class="mut-name-value ddgOl">
+					<li>
+						<label for="ddg">ΔΔG</label>
+						<span id="ddg"></span>
+					</li>
+				</ol>
+			</div>
+			<div class="k-header k-shadow">Highly similar mutants </div>
+			<div id="hInfo">
+                                <table id="resultsTable" name="resultsTable" style=""></table>
+                                 
+				<ol class="mut-name-value ddgOl">
+					<li>                    
+						<label for="ddg2">ΔΔG</label>
+						<span id="ddg2"></span>
+					</li>
+				</ol>
+			</div>
+		</div>
+	</div>
+	<div id="jsmol-div"></div>
+	<div id="evalWindow">
+		Evaluation Notes:
+		<br>
+		<textarea class="k-textbox" id="eval-textarea" maxlength="300" placeholder="Optional Evaluation Notes up to 300 characters..."></textarea>
+		<input id="evaluationDD" name="evaluationDD"/>
+		<button class="k-button" id="eval-save-btn">Save</button>
+	</div>
+	<script>
+		var myJmol, loadscript, projectsCB, pdbIdsCB, mutationsCB, evalDD;
+		
+		win = $("#evalWindow");
+
+		jmol_isReady = function(applet) {
+			//Jmol._getElement(applet, "appletdiv").style.border="1px solid lightblue";
+			//popupNotification.show("App Loaded", "info");
+			//$("#loading-img").fadeIn("slow");
+		}
+
+		var myInfo = {
+			width: "100%",
+			height: "100%",
+			debug: false,
+			color: "black",
+			addSelectionOptions: false,
+			serverURL: "http://ae15a.dyn.scilifelab.se/homologyScanner/jsmol.php",
+			//serverURL: "http://virtualchemistry.org/~mmb/jsmol.php",
+			use: "HTML5",
+			j2sPath: "j2s",
+			readyFunction: jmol_isReady,
+			disableInitialConsole: true,
+			loadStructCallback: "jsmolLoadStructCallback",
+		};
+		
+		$("#toolbar").kendoToolBar({
+			items: [
+				{
+					template: "<span><label>Project:</label><input id='projectSelect' style='width: 220px;' /></span>",
+					overflow: "never"
+				},
+				{ type: "separator" },
+				{
+					template: "<span><label>PDB ID:</label><input id='pdbIdSelect' style='width: 100px;' /></span>",
+					overflow: "never"
+				},
+
+                                { type: "separator" },
+                                {
+                                        template: "<span><label>complex:</label><input id='complexSelect' style='width: 100px;' /></span>",
+                                        overflow: "never"
+                                },
+
+				{ type: "separator" },
+				{
+					template: "<span><label>Mutation:</label><input id='mutationSelect' style='width: 100px;' /></span>",
+					overflow: "never"
+				},
+				{ type: "separator" },
+				{ type: "button", text: "Load",  id: "load-btn", enable: false, overflow: "never", click: load},
+				{ type: "separator" },
+				{ type: "button", text: "Evaluate", id: "eval-btn", enable: false, overflow: "never", click: winOpen},
+				{ type: "separator" },
+			]
+		});
+		
+		
+		function getProjectInfo(projectName) {
+			$.ajax({
+				type: "POST",
+				url: "calls.php",
+				dataType: 'json',
+				data: {restcall: 'getJobInfo', arguments: [projectName]},
+				success: function(projectInfo_data) {
+					$("#maxMutants").html(projectInfo_data.maxMutants);
+					$("#generationSize").html(projectInfo_data.generationSize);
+					$("#maxGenerations").html(projectInfo_data.maxGenerations);
+					$("#reportingInterval").html(projectInfo_data.reportingInterval);
+					$("#integratorAccuracy").html(projectInfo_data.integratorAccuracy);
+					$("#temperature").html(projectInfo_data.temperature);
+				},
+				error: function(projectInfo_jqXHR, projectInfo_textStatus, projectInfo_errorThrown) {
+					popupNotification.show("Error receiving Project Information: " + projectInfo_jqXHR.responseText, "error");
+				}
+			});
+		}
+		
+		function setMutationInfo(mutIndex) {
+                        console.log("mutIndex : ", mutIndex);
+                        console.log("PDB ID   : ",mutationsCB.dataItem(mutIndex).pdbId );
+			$("#WTString").html(mutationsCB.dataItem(mutIndex).WTString);
+			$("#status").html(mutationsCB.dataItem(mutIndex).status);
+			$("#ddg").html(mutationsCB.dataItem(mutIndex).ddg);
+			$("#currentPdbId").html(pdbIdsCB.pdbIdCache);
+			$("#ddg2").html("helloooow"); 
+                        populateResultsTable(mutIndex);                            
+		}
+
+                function populateResultsTable(mutIndex){ // $pdbId ,  $mutationStringPrimary, $complexStringPrimary, $jobName){
+                    var myTable = document.getElementById("resultsTable");
+                    var xhttp = new XMLHttpRequest(); // May need variant to handle old IE browsers https://www.w3schools.com/js/js_ajax_http.asp
+                    console.log("check 1  ");
+
+                    xhttp.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200){
+			    console.log("check 2  ");
+			    console.log("check 2.1 ");
+			    console.log(this.responseText);
+			    console.log("check 2.1.1 ");
+                            var s = this.responseText;
+                            s = s.replace(/\\n/g, "\\n")  
+			   .replace(/\\'/g, "\\'")
+			   .replace(/\\"/g, '\\"')
+			   .replace(/\\&/g, "\\&")
+			   .replace(/\\r/g, "\\r")
+			   .replace(/\\t/g, "\\t")
+			   .replace(/\\b/g, "\\b")
+			   .replace(/\\f/g, "\\f");
+                            // remove non-printable and other non-valid JSON chars
+                            s = s.replace(/[\u0000-\u0019]+/g,""); 
+			    console.log("check 2.3.1 ");
+                            console.log((s));
+                            //console.log(JSON.parse(s));
+			    console.log("check 2.3.2 ");
+			    console.log("check 2.1.2 ");
+			    console.log(JSON.parse(this.responseText)) ; // results of mysql query
+			    console.log("check 2.2 ");
+			    var myResultsArray = []; // casting these as arrays
+			    var myResultsArray = JSON.parse(this.responseText);
+			    console.log("check 2.3 ");
+			    console.log(myResultsArray);
+			    console.log(myResultsArray.length);
+			    var averageDDG = 0.0;       
+			    for (var i = 0; i< myResultsArray.length; i++){
+				console.log("check 2.2  ");
+				myRow = myTable.insertRow(0);
+				myCell = myRow.insertCell(0);
+				myCell.innerHTML = myResultsArray[i].DDGhomolog.toFixed(3);             
+				myCell = myRow.insertCell(0);
+				myCell.innerHTML = myResultsArray[i].mutationStringHomolog;
+				myCell = myRow.insertCell(0);
+				myCell.innerHTML = myResultsArray[i].pdbHomolog; 
+				averageDDG += myResultsArray[i].DDGhomolog / myResultsArray.length;
+			    }
+			    var myRow = myTable.insertRow(0); 
+			    var myCell = myRow.insertCell(0);
+			    myCell.innerHTML = "FoldX ΔΔG <br>(kcal/mol)"
+			    var myCell = myRow.insertCell(0);
+			    myCell.innerHTML = "mutation <br>(renumbered residues)"
+			    var myCell = myRow.insertCell(0);
+			    myCell.innerHTML = "PDB ID" ;               
+                            /*
+			    var myRow = document.getElementById("numResults").insertRow(0);
+			    var myCell = myRow.insertCell(0);
+			    myCell.innerHTML = "results."           ;                     
+			    var myCell = myRow.insertCell(0);
+			    myCell.innerHTML = myResultsArray.length;                     
+			    var myCell = myRow.insertCell(0);
+			    myCell.innerHTML = "homologyScanner has computed:"
+			    if (myResultsArray.length > 0){
+				var myRow = document.getElementById("averageDDG").insertRow(0);
+				var myCell = myRow.insertCell(0);
+				myCell.innerHTML = averageDDG.toFixed(3);                     
+				var myCell = myRow.insertCell(0);
+				myCell.innerHTML = "average DDG (kcal/mol) : ";
+			    } else {
+				var myRow = document.getElementById("averageDDG").insertRow(0);
+				var myCell = myRow.insertCell(0);
+				myCell.innerHTML = "No DDG results. Unable to compute average DDG.";
+			    }
+                            */
+			} else {
+			    console.log("check 3  ");
+			    console.log(this.status) ;
+			}
+		    }; 
+		    xhttp.open("POST", "calls.php", true ); // Going with asynchronous as I don't want to move on until the chains are ready. Revisit this decision later.
+		    console.log(this.status) ;
+		    xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // this turns out to be crucial!
+		    //xhttp.setRequestHeader("Content-Type", "text/html"); // this turns out to be crucial!
+		    //xhttp.setRequestHeader("Content-Type", "application/json"); // this turns out to be crucial!
+		    //xhttp.setRequestHeader("Content-Type", "text/javascript"); // this turns out to be crucial!
+                    var pdbId = mutationsCB.dataItem(mutIndex).pdbId ;
+                    console.log("check 3.5");                           
+                    console.log(mutIndex);
+                    console.log(mutationsCB.dataItem(mutIndex).pdbId);
+                    var mutationString = (mutationsCB.dataItem(mutIndex).mutationString);
+                    console.log(mutationsCB.dataItem(mutIndex).mutationString);
+                    console.log("check 3.6");                           
+                    console.log(mutationString);
+		    //console.log("restcall=getSynopsisTable&arguments[0]=" + pdbIdsCB.pdbIdCache + "&arguments[1]=" + mutationString               + "&arguments[2]=" + "A,B"                 + "&arguments[3]=" + "homoScan.1");
+		    console.log("restcall=getSynopsisTableFromHomolog&arguments[0]=" + pdbIdsCB.pdbIdCache + "&arguments[1]=" + "A-163-A"      );
+		    //xhttp.send("restcall=getSynopsisTableFromHomolog&arguments[0]=" + pdbIdsCB.pdbIdCache + "&arguments[1]=" + "A-163-A"      );
+		    //xhttp.send("restcall=getSynopsisTable&arguments[0]=" + pdbIdsCB.pdbIdCache + "&arguments[1]=" + "A-174-A"        + "&arguments[2]=" + "A,B"                 + "&arguments[3]=" + "homoScan.1");
+		    xhttp.send("restcall=getSynopsisTableFromHomolog&arguments[0]=" + pdbIdsCB.pdbIdCache     + "&arguments[1]=" + mutationString        + "&arguments[2]=" + "A,B"                  + "&arguments[3]=" + "homoScan.1");
+		    console.log("check 4  ");
+
+                }
+		function onProjectSelect(e) {
+			pdbIdsCB.enable(true);
+			pdbIdsCB.value("");
+			var dataSource = new kendo.data.DataSource({
+				transport: {
+					read: {
+						type: "POST",
+						url: "calls.php",
+						dataType: "json",
+						//data: {restcall: 'getMutInfo'  ,arguments: [e.item.text()]}
+                                                // SCF modified:
+
+                                                data: {restcall: 'getDistinctPdbIdsForProject'  ,arguments: [(e).item.text()]}
+                                                
+                                                //data: {restcall: 'getDistinctPdbIdsForProject'  ,arguments: [$("#projectSelect").getKendoComboBox().dataTextField    ]}
+                                                // trying:
+                                                //data: {restcall: 'getDistinctPdbIdsForProject'  ,arguments: [$("#animal").projectCB.text()]}
+					}
+				}
+			});
+			pdbIdsCB.setDataSource(dataSource);
+			//mutationsCB.setDataSource(dataSource);
+			getProjectInfo(e.item.text());
+                        pdbIdsCB.jobNameCache = e.item.text(); 
+			$("#WTString").html("");
+			$("#status").html("");
+			$("#ddg").html("");
+			win.data("kendoWindow").close();
+			$("#toolbar").data("kendoToolBar").enable("#eval-btn", false);
+			$("#toolbar").data("kendoToolBar").enable("#load-btn", false);
+		}
+		
+                function onPdbIdSelect(e) {
+                        mutationsCB.enable(true);
+                        mutationsCB.value("");
+                        pdbIdsCB.pdbIdCache = (e).item.text();
+                        console.log((e).item.index());
+                        console.log((e).item.text());
+                        console.log((e).item.index());
+                        console.log(" pdbIdCache = ",pdbIdsCB.pdbIdCache);
+                        console.log("jobNameCache = ",pdbIdsCB.jobNameCache);
+                        
+			var dataSource = new kendo.data.DataSource({
+				transport: {
+					read: {
+						type: "POST",
+						url: "calls.php",
+						dataType: "json",
+						data: {restcall: 'getMutInfoFromProjectAndPdb'  ,arguments: [pdbIdsCB.jobNameCache, pdbIdsCB.pdbIdCache]}
+						//data: {restcall: 'getMutInfo'  ,arguments: [pdbIdsCB.jobNameCache]}
+						//data: {restcall: 'getMutInfo'  ,arguments: [e.item.text()]}
+					}
+				}
+			});
+			mutationsCB.setDataSource(dataSource);
+                        //$("#toolbar").data("kendoToolBar").enable("#load-btn");
+                        $("#toolbar").data("kendoToolBar").enable("#eval-btn",false);
+                        $("#toolbar").data("kendoToolBar").enable("#load-btn",false);
+
+
+                }
+
+
+                function onComplexSelect(e) {
+                        mutationsCB.enable(true);
+                        mutationsCB.value("");
+                        complexCB.complexCache = (e).item.text();
+                        console.log((e).item.index());
+                        console.log((e).item.text());
+                        console.log((e).item.index());
+                        console.log(" complexCache = ",complexCB.complexCache);       
+
+                        var dataSource = new kendo.data.DataSource({
+                                transport: {
+                                        read: {
+                                                type: "POST",
+                                                url: "calls.php",
+                                                dataType: "json",
+                                                data: {restcall: 'getMutInfoFromProjectAndPdb'&nbsp; ,arguments: [pdbIdsCB.jobNameCache, pdbIdsCB.pdbIdCache]}                              
+                                                //data: {restcall: 'getMutInfoFromPdbAndComplex'  ,arguments: [pdbIdsCB.jobNameCache, pdbIdsCB.pdbIdCache, complexCB.complexCache]}
+
+                                        }    
+                                }    
+                        });     
+                        mutationsCB.setDataSource(dataSource);
+                        $("#toolbar").data("kendoToolBar").enable("#eval-btn",false);
+                        $("#toolbar").data("kendoToolBar").enable("#load-btn",false);
+
+
+                }  
+
+		function onMutationSelect(e) {
+
+
+
+                        win.data("kendoWindow").close();
+                        win.data("kendoWindow").title("Evaluation for " + e.item.text());
+                        setMutationInfo(e.item.index());
+                        getCurEval(e.item.text());
+                        $("#toolbar").data("kendoToolBar").enable("#eval-btn",false);// this does not seem to work at the moment. Fix and reinstate.
+                        $("#toolbar").data("kendoToolBar").enable("#load-btn");
+/*
+
+			win.data("kendoWindow").close();
+			win.data("kendoWindow").title("Evaluation for " + e.item.text());
+                        console.log("item index: ",e.item.index());
+			setMutationInfo(e.item.index());
+			getCurEval(e.item.text());
+			$("#toolbar").data("kendoToolBar").enable("#eval-btn", false);
+			$("#toolbar").data("kendoToolBar").enable("#load-btn");
+                        console.log(mutationsCB.dataItem(e.item.index()).WTString);
+                        //console.log(mutationsCB.dataItem(e.dataItem(e.item.index()).mutString));
+                        ///console.log(mutationsCB.dataItem(e.item.text()));
+*/
+
+		}
+		/*function onMutationSelect(e) {
+			win.data("kendoWindow").close();
+			win.data("kendoWindow").title("Evaluation for " + e.item.text());
+			setMutationInfo(e.item.index());
+			getCurEval(e.item.text());
+			$("#toolbar").data("kendoToolBar").enable("#eval-btn", false);
+			$("#toolbar").data("kendoToolBar").enable("#load-btn");
+		}*/
+		
+		$("#projectSelect").kendoComboBox({
+			dataTextField: "jobName",
+			dataValueField: "jobName",
+			placeholder: "Select Project...",
+			filter: "contains",
+			dataSource: {
+				transport: {
+					read: {
+						type: "POST",
+						url: "calls.php",
+						dataType: "json",
+						data: {restcall: 'getJobNames',arguments: [user]}
+					}
+				}
+			},
+			select: onProjectSelect
+		});
+		
+		projectsCB = $("#projectSelect").data("kendoComboBox");
+
+		$("#pdbIdSelect").kendoComboBox({
+			//dataTextField: "jobName",
+			//dataValueField: "jobName",
+			dataTextField: "pdbId",
+			dataValueField: "pdbId",
+			placeholder: "PDB ID...",
+			filter: "contains",
+			select: onPdbIdSelect,
+			enable: false,
+		});
+                pdbIdsCB = $("#pdbIdSelect").data("kendoComboBox");
+                pdbIdsCB.pdbIdCache   = "howdy1"; // Just a flag to make sure this gets overriden later
+                pdbIdsCB.jobNameCache = "howdy2";
+
+                $("#complexSelect").kendoComboBox({
+                        dataTextField: "complexString",
+                        dataValueField: "complexString",
+                        placeholder: "Complex...",
+                        filter: "contains",
+                        select: onComplexSelect,
+                        enable: false,
+                }); 
+                complexCB = $("#complexSelect").data("kendoComboBox");
+                complexCB.complexCache   = "complexCB.complexCache : This cache has not been set"; // Just a flag to make sure this gets overriden later
+
+
+		$("#mutationSelect").kendoComboBox({
+			dataTextField: "mutationString",
+			dataValueField: "mutationString",
+			placeholder: "Mutation...",
+			filter: "contains",
+			select: onMutationSelect,
+			enable: false
+		});
+		
+		mutationsCB = $("#mutationSelect").data("kendoComboBox");
+		
+		$("#evaluationDD").kendoDropDownList({
+			dataTextField: "status",
+			dataValueField: "id",
+			dataSource: evalData,
+			index: 1
+		});
+		
+		evalDD = $("#evaluationDD").data("kendoDropDownList");
+		
+		$("#eval-save-btn").click(function() {
+			if ($("#eval-textarea").val().length > 300) {
+				popupNotification.show("Please keep the note up to 300 characters.", "warning");
+				return false;
+			}
+			
+			$("#loading-img").fadeIn("slow");
+			$(this).prop("disabled",true);
+				
+			$.ajax({
+				type: "POST",
+				url: "calls.php",
+				dataType: 'json',
+                                // SCF update to include pdbId :
+				data: {restcall: 'submitEval', arguments: [user, projectsCB.value(), mutationsCB.value(), evalDD.value(), $("#eval-textarea").val()]},
+				success: function(submitEval_data) {
+					$("#loading-img").fadeOut("slow");
+					$("#eval-save-btn").prop('disabled', false);
+					popupNotification.show("Evaluation saved, Thank you.", "success");
+				},
+				error: function(submitEval_jqXHR, submitEval_textStatus, submitEval_errorThrown) {
+					popupNotification.show("Error saving evaluation: " + submitEval_jqXHR.responseText, "error");
+					$("#loading-img").fadeOut("slow");
+					$("#eval-save-btn").prop('disabled', false);
+				}
+			});
+		});
+		
+		function getCurEval(mutName) {
+			$.ajax({
+				type: "POST",
+				url: "calls.php",
+				dataType: 'json',
+				data: {restcall: 'getEval', arguments: [user, projectsCB.value(),pdbIdsCB.pdbIdCache, mutName]},
+				//data: {restcall: 'getEval', arguments: [user, projectsCB.value(), mutName]},
+				success: function(getEval_data) {
+					if (JSON.stringify(getEval_data) != "false") {
+						evalDD.select(getEval_data.status - 1);
+						$("#eval-textarea").val(getEval_data.note);
+					}else {
+						evalDD.select(0);
+						$("#eval-textarea").val("");
+					}
+				},
+				error: function(getEval_jqXHR, getEval_textStatus, getEval_errorThrown) {
+					popupNotification.show("Error retrieving current mutation evaluation: " + getEval_jqXHR.responseText, "error");
+				}
+			});
+		}
+		
+		function load() {
+			$("#loading-img").fadeIn("slow");
+			$.ajax({
+				type: "POST",
+				url: "calls.php",
+				dataType: 'json',
+                                // SCF update to include pdbId :
+				data: {restcall: 'getPdb', arguments: [projectsCB.value(), pdbIdsCB.value(), mutationsCB.value(), sID]},
+				success: function(getPdb_data) {
+					popupNotification.show("File transfer successful", "success");
+					if (user != "Guest") {
+						$("#toolbar").data("kendoToolBar").enable("#eval-btn");
+					}
+					loadJsMol();
+				},
+				error: function(getPdb_jqXHR, getPdb_textStatus, getPdb_errorThrown) {
+					popupNotification.show("Error in File tranfer: " + getPdb_jqXHR.responseText, "error");
+					$("#loading-img").fadeOut("slow");
+				}
+			});
+		}
+		
+		function loadJsMol() {
+			xxxx = projectsCB.value().replace("/", "_") + "_" + mutationsCB.value();
+			loadscript = 'h2oOn=true;set animframecallback "jmolscript:if (!selectionHalos) {select model=_modelNumber}";'
+				+'set errorCallback "errorCallback";'
+				+'set defaultloadscript "isDssp = false;set defaultVDW babel;if(!h2oOn){display !water}";'
+				+'set zoomlarge false;color echo orange;set echo top left;echo Loading ' + mutationsCB.value() + '...;refresh;'
+				+'load "http://ae15a.dyn.scilifelab.se/homologyScanner/temp/' + sID + '/XXXX.pdb";color echo orange;set echo top center;echo ' + mutationsCB.value() + ';'
+				+'spacefill off;wireframe off;cartoons on;color chain;'
+			loadscript = loadscript.replace(/XXXX/g, xxxx)
+			
+			Jmol.script(myJmol, loadscript);
+		}
+		
+		function jsmolLoadStructCallback() {
+			$("#loading-img").fadeOut("slow");
+		}
+		
+		var slide = kendo.fx($("#slide-in-info")).slideIn("left"),visible = true;
+
+		$("#slide-in-handle").click(function(e) {
+			if (visible) {
+				slide.reverse();
+			} else {
+				slide.play();
+			}
+			visible = !visible;
+			e.preventDefault();
+		});
+		
+		win.kendoWindow({
+			width : "300px",
+			height : "200px",
+			visible: false,
+			draggable: false,
+			resizable: false
+		});
+		
+		function evalWindowRelocate() {
+			var h,w;
+			
+			if ($(window).height() > $("html").css("min-height").slice(0,-2)) {
+				h = $(window).height();
+			}else {
+				h = $("html").css("min-height").slice(0,-2);
+			}
+			
+			if ($(window).width() > $("html").css("min-width").slice(0,-2)) {
+				w = $(window).width();
+			}else {
+				w = $("html").css("min-width").slice(0,-2);
+			}
+			
+			win.data("kendoWindow").setOptions({
+				position: {
+					top: h - 250,
+					left: w - 310
+				}
+			});
+		}
+		
+		function winOpen() {
+			if (mutationsCB.value() != "") {
+				if (win.data("kendoWindow").element.is(":hidden")) {
+					evalWindowRelocate();
+					win.data("kendoWindow").open();
+				}else {
+					win.data("kendoWindow").toFront();
+				}
+			}else {
+				popupNotification.show("Please select a Mutation first.", "warning");
+			}
+		}
+		
+		$(document).on('dblclick','.k-window-titlebar',function(e){
+			e.preventDefault();
+		});
+		
+		window.onresize = function(event) {
+			evalWindowRelocate();
+		};
+		
+		$(document).ready(function() {
+			setTimeout(function() {
+				Jmol.setDocument(0);
+				Jmol.getApplet("myJmol", myInfo);
+				$("#jsmol-div").html(Jmol.getAppletHtml(myJmol));
+			}, 50);
+		});
+	</script>
+	<style>
+		html {
+			min-width: 800px;
+			min-height: 600px;
+			font-family: Arial, Helvetica, sans-serif;
+		}
+		
+		html,body {
+			height: 100%;
+			width: 100%;
+			margin: 0;
+			padding: 0;
+		}
+		
+		#toolbar {
+			font-size: 75%;
+			line-height: 28px;
+			height: 30px;
+		}
+		
+		.menuBtns {
+			font-size: 75%;
+		}
+		
+		.arrowIcon {
+			width: 16px;
+			height: 28px;
+			background: url("styles/Moonlight/sprite_2x.png") 318px 287px;
+		}
+		
+		#jsmol-div {
+			height: calc(100% - 32px);
+			width: 100%;
+			overflow: hidden;
+		}
+		
+		#slide-in-info {
+			position: absolute;
+			top: 80px;
+			left: 0;
+			width: 200px;
+			margin-left: -202px;
+			border: solid #171E28;
+			border-width: 1px 1px 0px 0;
+			background-color: #212A33;
+			color: white;
+			z-index: 10000;
+		}
+
+		#slide-in-handle {
+			position: absolute;
+			top: calc(50% - 26px);
+			left: 200px;
+			width: 14px;
+			height: 40px;
+			background-color: #212A33;
+			padding: 12px 4px 0 4px;
+			border-radius: 0 5px 5px 0;
+		}
+		
+		#projectInfo {
+			font-size: 90%;
+		}
+		
+		.k-header.k-shadow {
+			text-align: center;
+			margin-bottom: 5px;
+		}
+		
+		#pInfo,#mInfo {
+			padding: 0 3% 0 3%;
+			margin: 0 0 10px 0;
+		}
+		
+		ol.proj-name-value {
+			width: 100%;
+			list-style: none;
+			display: table;
+			padding: 0;
+			margin: 0;
+			line-height: 1.4;
+		}
+
+		ol.proj-name-value li {
+			display: table-row;
+		}
+
+		ol.proj-name-value li label {
+			display: table-cell;
+			width: 80%;
+		}
+
+		ol.proj-name-value li span {
+			display: table-cell;
+			width: 20%;
+			color: #F4AF03;
+		}
+		
+		ol.mut-name-value {
+			width: 100%;
+			list-style: none;
+			display: table;
+			padding: 0;
+			margin: 0;
+			line-height: 1.4;
+		}
+
+		ol.mut-name-value li {
+			display: table-row;
+		}
+
+		ol.mut-name-value li label {
+			display: table-cell;
+			width: 50%;
+		}
+
+		ol.mut-name-value li span {
+			display: table-cell;
+			width: 50%;
+			color: #F4AF03;
+		}
+		
+		ol.mut-name-value.ddgOl label {
+			display: table-cell;
+			width: 30%;
+		}
+
+		ol.mut-name-value.ddgOl span {
+			display: table-cell;
+			width: 75%;
+			color: #F4AF03;
+		}
+		
+		.k-window-titlebar {
+			font-size: 95% !important;
+			font-weight: bold;
+		}
+		
+		#evalWindow {
+			font-size: 90%;
+			margin: 0;
+			padding: 5px;
+		}
+		
+		#eval-textarea {
+			resize: none;
+			width: 290px;
+			height: 130px;
+			margin-bottom: 5px;
+		}
+		
+		#evaluationDD {
+			float: left;
+			width: 195px;
+		}
+		
+		#eval-save-btn {
+			width: 90px;
+			height: 31px;
+			font-size: 14px;
+			font-weight: bold;
+			float: right;
+		}
+	</style>
+</body>
+</html>

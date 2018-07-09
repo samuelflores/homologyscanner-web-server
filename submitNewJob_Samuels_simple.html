@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<form method="POST" name="mainForm" enctype="application/x-www-form-urlencoded" action="action_page.php">
+  Your email:<br>
+  <input type="text" id=email  readonly=1 name="email" value="samuelfloresc@gmail.com">
+  <br>
+  Job cohort:<br>
+  <input type="text" id=jobName readonly=1 name="jobName" value="homoScan.1">
+  <br><br>
+
+  PDB ID:<br>        
+  <input type="text" id=pdbId required=1 onkeyup=validatePdbAndPopulateChains()  name="pdbId" value="" > 
+  <br> 
+
+  <br>
+
+  Add/remove chains to  1:<br>
+  <button id=addChain1Button type="button" onclick=addChainRow(1) disabled=true>Add chain to  1</button>
+  <button id="deleteChain1Button" type="button" onclick=deleteChainRow(1) disabled=true>Remove chain from  1</button>
+  <br> 
+
+  <!-- This table holds the chain IDs   -->
+  <table id=chains1Table name="chains1Table" style=""></table>
+
+  Add/remove chains to  2:<br>
+  <button id=addChain2Button type="button" onclick=addChainRow(2) disabled=true>Add chain to  2</button>
+  <button id="deleteChain2Button" type="button" onclick=deleteChainRow(2) disabled=true>Remove chain from  2</button>
+  <br> 
+
+  <!-- This table holds the chain IDs   -->
+  <table id=chains2Table name="chains2Table" style=""></table>
+
+  Add/remove mutations:<br>
+  <button id=addSubstitutionButton type="button" onclick=addSubstitutionRow() disabled=true>Add substitution</button>
+  <button id="deleteMutationButton" type="button" onclick=deleteSubstitutionRow() disabled=true>Remove substitution</button>
+  <br> 
+
+<table id=substitutionTable name="substitutionTable" style=""></table>
+
+  <br>
+
+
+
+  <input type="button" value="Submit"  onclick="formSubmitProcedure()">
+</form> 
+
+<p>If you click the "Submit" button, the form-data will be sent to a page called "/action_page.php".</p>
+
+</body>
+
+
+
+<script>
+
+    // Should only be called AFTER document.allPdbChains is properly populated
+    function populateRemainingPdbChains(){
+        if (!(document.allPdbChains.length > 1)) { 
+           alert("Error! Not enough chains found!"); 
+        }
+        document.remainingPdbChains = document.allPdbChains.slice(); // the slice() method ensures that we copy the array by value rather than by reference. https://stackoverflow.com/questions/7486085/copying-array-by-value-in-javascript
+        for (var h = 1; h < 3; h++){
+            var myTable =  document.getElementById("chains" + h + "Table");
+        
+            for (var i = 0; i < myTable.rows.length; i++) {
+                    var myIndex = document.remainingPdbChains.indexOf(myTable.rows[i].cells[0].childNodes[0].value)
+                    console.log("Looking for " + myTable.rows[i].cells[0].childNodes[0].value);
+                    if (myIndex != -1){ // If one of the user-selected chains is found in document.remainingPdbChains ..
+                        console.log("Deleting " + myTable.rows[i].cells[0].value);
+                        document.remainingPdbChains.splice(myIndex,1); // Remove the corresponding chain from document.remainingPdbChains
+                        console.log("Deleting " + myTable.rows[i].cells[0].value);
+                    } else { // Actually this should never happen.
+                        alert("Somehow you have selected a chain which is not in the protein! Or maybe you selected the same chain more than once!");
+                    }
+            }
+        }     
+    }
+
+    function populateChainArrays(){
+            var xhttp = new XMLHttpRequest(); // May need variant to handle old IE browsers https://www.w3schools.com/js/js_ajax_http.asp
+            console.log("Detected 1 at your PDB ID is valid. You may now add chains.");
+
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    console.log(JSON.parse(this.responseText)) ;
+                    var myTempChainIdArray = JSON.parse(this.responseText);
+                    var myChainIdArray = []; // casting these as arrays
+                    document.allPdbChains = []; // casting these as arrays
+                    document.remainingPdbChains = [];
+                    for (var i = 0; i< myTempChainIdArray.length; i++){
+                        myChainIdArray.push(myTempChainIdArray[i].chainId);  
+                        document.allPdbChains.push(myTempChainIdArray[i].chainId); // trying to make sure the array gets passed by value not reference
+                        //document.remainingPdbChains.push(myTempChainIdArray[i].chainId); // trying to make sure the array gets passed by value not reference
+                    }
+                    populateRemainingPdbChains();            
+                    console.log(myChainIdArray);
+                    document.usedPdbChains = [];
+                } else {
+                    console.log(this.status) ;
+                }
+            }; 
+            xhttp.open("POST", "calls.php", true ); // Going with asynchronous as I don't want to move on until the chains are ready. Revisit this decision later.
+            console.log(this.status) ;
+            xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // this turns out to be crucial!
+            console.log(document.getElementById("pdbId").value );
+            // Argument is user-provided PDB ID:
+            xhttp.send("restcall=getPdbChains&arguments[]=" + document.getElementById("pdbId").value ); // calls.php contains a SWITCH on 'restcall'
+    }
+
+    function populatePdbPrimaryArray(complex1, complex2){
+        if (complex1 === undefined) {
+            complex1 = "";
+        } 
+        if (complex2 === undefined) {
+            complex2 = "";
+        }
+        var myPdbIdArray = [];
+        var xhttp = new XMLHttpRequest(); 
+        xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+                console.log(JSON.parse(this.responseText)) ;
+                var myTempPdbPrimaryArray = JSON.parse(this.responseText);
+                document.pdbPrimaryArray = []; // make sure this array is empty
+                for (var i = 0; i< myTempPdbPrimaryArray.length; i++){
+                    document.pdbPrimaryArray.push(myTempPdbPrimaryArray[i].pdbPrimary); // trying to make sure the array gets passed by value not reference
+                    console.log(myTempPdbPrimaryArray[i]);
+                }
+                console.log(document.pdbPrimaryArray);
+                console.log(document.pdbPrimaryArray.join());
+                // moved this up from validatePdbAndPopulateChains, so it onlky happens after we are done with document.pdbPrimaryArray .
+                document.getElementById("pdbId").readOnly = true ;
+                document.getElementById("pdbId").value = document.getElementById("pdbId").value.toUpperCase();     
+                document.getElementById("addChain1Button").disabled = false;
+                document.getElementById("addChain2Button").disabled = false;
+
+                function checkPdbIdMatches(thisPdbId){
+                   return thisPdbId ==  document.getElementById("pdbId").value ; 
+                }
+
+                if (document.pdbPrimaryArray.length == 0){
+                    // There is no primaryPdb associated with the user-provided PDB ID. This is a completely new protein. Do nothing special.
+                    console.log("no pdbPrimary found for this PDB ID. This is a new PDB ID.");
+                    alert("Your specified PDB ID " + document.getElementById("pdbId").value + " is not a member of any existing family of homologous PDB IDs. This is evidently the first time this PDB ID is used. ");
+                } else if (!(document.pdbPrimaryArray.find( checkPdbIdMatches ) === undefined )) { // If one of the elements of document.pdbPrimaryArray is  document.getElementById("pdbId")
+                    if (document.pdbPrimaryArray.length >  1) {
+                        alert("Your specified PDB ID  is already the head of more than one existing family of homologous PDB IDs. This is good, let's keep this PDB ID for now. For your information, this pdbID is a member of families headed by : " + document.pdbPrimaryArray.join());
+                    } else {
+                        alert("Your specified PDB ID "+  document.getElementById("pdbId").value + "  is the head of exactly  one existing family of homologous PDB IDs. That means there are already submissions for at least one mutation of this complex. This is good, let's continue.");
+                    }
+                    ////alert("Your specified PDB ID " + document.getElementById("pdbId") + " is already the head of at least one existing family of homologous PDB IDs. If at all possible we should try to do the calculations within the context of an existing family. The candidate families are headed by : " + document.pdbPrimaryArray.join());
+                } else {
+                    if (!((complex1 == "") && (complex2 == ""))){
+                        alert("Your specified PDB ID " + document.getElementById("pdbId").value + " and complex " +complex1 + "," + complex2 + " . This combination has already been submitted as a homologous family headed by PDB ID: " +  document.pdbPrimaryArray.join() + " . You are now obligated to switch to PDB ID " + document.pdbPrimaryArray[0] + " . "); 
+                        for (var numComplex = 1; numComplex < 3; numComplex++)
+                        {
+                            for (var i = 0; i < document.getElementById("chains"+numComplex+"Table").rows.length; i++) {deleteChainRow(numComplex);}
+                        }
+                        deleteSubstitutionRow();
+                        document.getElementById("pdbId").value = document.pdbPrimaryArray[0];
+                        populateChainArrays();
+                        //document.getElementById("pdbId").text = document.pdbPrimaryArray[0];
+                    }
+                    else if (confirm("Your specified PDB ID " + document.getElementById("pdbId").value + " is a member of homolog families headed by the following PDB ID(s): " +  document.pdbPrimaryArray.join() + " . As you can see, it is not the head of any of these families. We STRONGLY recommend switching to one of these other PDB IDs. Press OK to make the switch to " + document.pdbPrimaryArray[0] + " . ")) {
+                        document.getElementById("pdbId").value = document.pdbPrimaryArray[0];
+                        populateChainArrays();
+                        //document.getElementById("pdbId").text = document.pdbPrimaryArray[0];
+                    };
+
+                    /*if (document.pdbPrimaryArray.length >  1) { // if the user-provided PDB ID is not the head of any of the families..
+                        alert("Your specified PDB ID " + document.getElementById("pdbId").value + " is a member of at least one existing family of homologous PDB IDs. However it is not the parent PDB ID. If at all possible we should try to do the calculations in the context of the parent PDB ID. We STRONGLY suggest now switching to one of these PDB IDs: " + document.pdbPrimaryArray.join());
+                    } else {
+                        alert("Your specified PDB ID " + document.getElementById("pdbId").value + " is a member of exactly one existing family of homologous PDB IDs. However it is not the parent PDB ID. If at all possible we should try to do the calculations in the context of the parent PDB ID. We STRONGLY suggest now switching to the following PDB ID: " + document.pdbPrimaryArray.join());
+                    }*/
+
+                    /*if (confirm("Your specified PDB ID " + document.getElementById("pdbId").value + " is a member of homolog families headed by the following PDB ID(s): " +  document.pdbPrimaryArray.join() + " . As you can see, it is not the head of any of these families. We STRONGLY recommend switching to one of these other PDB IDs. Press OK to make the switch to " + document.pdbPrimaryArray[0] + " . ")) {
+                        document.getElementById("pdbId").value = document.pdbPrimaryArray[0];
+                        populateChainArrays();
+                        //document.getElementById("pdbId").text = document.pdbPrimaryArray[0];
+                    };*/
+                }
+
+
+
+
+           } else {
+                console.log(this.status) ;
+            }
+           console.log(document.getElementById("pdbId").value);
+        }; 
+        xhttp.open("POST", "calls.php", true   ); // Going with asynchronous 
+        xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // this turns out to be crucial!
+        // Argument is user-provided PDB ID:
+        //xhttp.send("restcall=getPdbPrimary&arguments[]=" + document.getElementById("pdbId").value ); // calls.php contains a SWITCH on restcall
+        if ((complex1 == "") && (complex2 == ""))
+            xhttp.send("restcall=getPdbPrimary&arguments[]=" + document.getElementById("pdbId").value ); // calls.php contains a SWITCH on restcall
+        else if  ((complex1 == "") || (complex2 == "")) {alert("One of your complexes is empty!"); return;}
+        else {
+            var myQuery = "restcall=getPdbPrimary&arguments[0]=" + document.getElementById("pdbId").value +"&arguments[1]=" + complex1 + "&arguments[2]=" + complex2;   
+            console.log(myQuery);
+            xhttp.send(myQuery);
+            //xhttp.send("restcall=getPdbPrimary&arguments[]=" + document.getElementById("pdbId").value +"&" + complex1 + "&" + complex2); 
+        }
+
+    }
+
+    function validatePdbAndPopulateChains(){
+        var myChainIdArray = [];
+        if (!(validatePdbIdLength())) {
+            return false; // First make sure the length is right
+        } else {
+            document.pdbPrimaryArray = []; // casting these as arrays
+            populatePdbPrimaryArray();
+                // moved this up to populatePdbPrimaryArray()     , so it onlky happens after we are done with document.pdbPrimaryArray .
+            /*
+            document.getElementById("pdbId").readOnly = true ;
+            document.getElementById("pdbId").value = document.getElementById("pdbId").value.toUpperCase();     
+            document.getElementById("addChain1Button").disabled = false;
+            document.getElementById("addChain2Button").disabled = false; 
+            if (document.pdbPrimaryArray.length == 0){
+                // There is no primaryPdb associated with the user-provided PDB ID. This is a completely new protein. Do nothing special.
+                console.log("no pdbPrimary found for this PDB ID. This is a new PDB ID.");
+                alert("Your specified PDB ID " + document.getElementById("pdbId") + " is not a member of any existing family of homologous PDB IDs. This is evidently the first time this PDB ID is used.  We will be creating a new homolog family for you. ");
+            } else if (!(document.pdbPrimaryArray.find( document.getElementById("pdbId") ) === undefined )) { // If one of the elements of document.pdbPrimaryArray is  document.getElementById("pdbId")
+                alert("Your specified PDB ID " + document.getElementById("pdbId") + " is already the head of at least one existing family of homologous PDB IDs. If at all possible we should try to do the calculations within the context of an existing family. The candidate families are headed by : " + document.pdbPrimaryArray.join());
+            } else { // if the user-provided PDB ID is not the head of any of the families..
+                alert("Your specified PDB ID " + document.getElementById("pdbId") + " is a member of at least one existing family of homologous PDB IDs. However it is not the parent PDB ID. If at all possible we should try to do the calculations in the context of the parent PDB ID. We STRONGLY suggest now switching to one of these PDB IDs: " + document.pdbPrimaryArray.join());
+            }
+*/
+            console.log("Detected that your PDB ID is valid. You may now add chains.");
+            populateChainArrays();
+        }
+    }
+
+    function validatePdbIdLength(){
+        var pdbIdElement = document.getElementById("pdbId"); 
+        var lengthPdbId  = pdbIdElement.value.length;
+        //alert(lengthPdbId);
+        if (lengthPdbId == 4) {
+            return(true); 
+        } else return false;
+    }
+    function sortChainRows( numComplex ){
+        var myTable =  document.getElementById("chains"+numComplex+"Table");
+        console.log(numComplex);
+        function compareChainRows(j,k){
+            console.log(numComplex);
+            var myTable =  document.getElementById("chains"+numComplex+"Table");
+            console.log(myTable.rows.length );
+            if (myTable.rows[j].cells[0].childNodes[0].value < myTable.rows[k].cells[0].childNodes[0].value ) {
+                console.log( " < " );
+                return 1;}
+            else if (myTable.rows[j].cells[0].childNodes[0].value == myTable.rows[k].cells[0].childNodes[0].value ) {
+                console.log( " ==" );
+                return 0;}
+            else if (myTable.rows[j].cells[0].childNodes[0].value > myTable.rows[k].cells[0].childNodes[0].value ) { 
+                console.log( " > " );
+                return -1;}
+        }
+        console.log(myTable.rows);
+        //myTable.rows.sort(sortChainRows);
+        for (var h = 1; h < myTable.rows.length; h++)
+            for (var i = 0; i < (myTable.rows.length - h) ; i++ )
+            {
+                if (compareChainRows( i ,i + 1) == 1) {
+                    console.log("NOT Swapping rows");
+                } // a<b, so do nothing
+                else if (compareChainRows( i ,i + 1 ) == 0) {
+                    alert("Error! There are two identical chains! Reset the page and start over.");1
+                }
+                else if (compareChainRows( i ,i + 1 )){ // Swap these two rows
+                    console.log("Swapping rows");
+                    myTable.rows[i].parentNode.insertBefore(myTable.rows[i + 1] ,myTable.rows[i]);
+                    console.log(" rows = " + myTable.rows.length);
+                    console.log(" rows = " + myTable.rows.length);
+                }
+             }
+        for (var h = 0; h < myTable.rows.length; h++) console.log("Row "+ h + " has : " + myTable.rows[h].cells[0].childNodes[0].value );   
+    }
+    // This just takes all the elements of document.remainingPdbChains and creates options in the drop down list.
+    function repopulateOptions(localChainSelector){
+        console.log(document.remainingPdbChains[i]);
+        // depopulate the list of options, in case it is not empty:
+        var totalChildren = localChainSelector.childElementCount;
+        for (var i= 0; i < totalChildren; i++) {localChainSelector.removeChild(localChainSelector.childNodes[0]);}
+        console.log(localChainSelector.childElementCount);
+        console.log(document.remainingPdbChains);
+        for (var i = 0 ; i< document.remainingPdbChains.length ; i++){
+            var myChainId = document.remainingPdbChains[i]; 
+            var myOption = document.createElement("option");
+            console.log(myChainId);
+            console.log(myChainId.value);
+            console.log(myChainId.chainId);
+            console.log(document.remainingPdbChains[i]);
+            myOption.value = myChainId; 
+            myOption.innerHTML = myChainId; 
+            localChainSelector.appendChild(myOption);
+        }
+        //populateRemainingPdbChains(); // Just added this, might not be necessary but seems safe.
+    }
+        function createChainSelector(numComplex){
+            var myTable =  document.getElementById("chains"+numComplex+"Table");  
+            // Chain ID selector:
+            var createdChainSelector = document.createElement("SELECT");
+            createdChainSelector.id = "complex" + numComplex + "ChainSelector" + (myTable.rows.length - 1); //tableNumRows is always 1 less than  myTable.rows.length
+            createdChainSelector.name = createdChainSelector.id;
+            createdChainSelector.onfocus = function(){
+                console.log(document.remainingPdbChains);
+                this.previous = this.value;
+                
+                populateRemainingPdbChains(); // Just added this, might not be necessary but seems safe.
+                if (document.remainingPdbChains.indexOf(this.previous) == -1){  // This should always happen actually, as we just called populateRemainingPdbChains
+                    document.remainingPdbChains.push(this.previous);
+                } // have to temporarioy add this.previous to remainingPdbChains in order to repopulate properly
+                else {
+                    //alert("Problem!");
+                }
+                repopulateOptions(createdChainSelector);   // This just takes all the elements of document.remainingPdbChains and creates options in the drop down list.
+                populateRemainingPdbChains(); // have to remove the selected element from remainingPdbChains again
+                //document.remainingPdbChains.splice(document.remainingPdbChains.indexOf(this.previous),1) ; // have to remove the selected element from remainingPdbChains again
+                 
+                // Make the prior value the current selected value. 
+                for (var i= 0; i <    createdChainSelector.childElementCount; i++) {
+                    if (createdChainSelector.childNodes[i].value ==  this.previous){
+                        createdChainSelector.selectedIndex = i;
+                    }
+                }
+            }
+            createdChainSelector.onchange = function(){
+               console.log("check 1");
+               console.log(document.allPdbChains.length -1);
+               populateRemainingPdbChains(); // This will remove the currently selected value
+               //document.remainingPdbChains.splice(document.remainingPdbChains.indexOf(this.value),1) ;
+               //if (document.remainingPdbChains.indexOf(this.previous) == -1){ 
+               //    document.remainingPdbChains.push(this.previous);} // The prior option is now available for use again
+               //sortChainRows(1);  
+               //sortChainRows(2);  
+            }
+            return createdChainSelector;
+        }
+
+    function addChainRow( numComplex ){
+        document.getElementById("pdbId").readonly = true;
+        console.log(document.allPdbChains.length -1);
+        document.getElementById("deleteChain" + numComplex + "Button").disabled = false; 
+        var myTable =  document.getElementById("chains"+numComplex+"Table");  
+        var tableNumRows = myTable.rows.length;
+        myTable.insertRow(tableNumRows); 
+        
+        myTable.rows[tableNumRows].insertCell(0); 
+        var myChainSelector = createChainSelector(numComplex);
+
+        console.log(document.remainingPdbChains);
+        repopulateOptions(myChainSelector);
+        myTable.rows[tableNumRows].cells[0].appendChild(myChainSelector);
+        
+        // If we reached the maximum number of rows, disable the add mutation button
+        if (document.remainingPdbChains.length == 1)
+        { 
+            document.getElementById("addChain1Button").disabled = true; 
+            document.getElementById("addChain2Button").disabled = true; 
+            alert("This is the last chain left to select from. You are not allowed to make further selections without deleting a chain from one of the two complexes.");                                                                               
+        }
+        else if (myTable.rows.length == (document.allPdbChains.length -1))
+        {// probably set to num chains in PDB minus one.
+            document.getElementById("addChain" + numComplex + "Button").disabled = true; 
+            alert("You are only allowed to specify " +  (document.allPdbChains.length -1) + " chains for this , based on a total number of " + document.allPdbChains.length + " available chains");
+        }
+        else if ((myTable.rows.length == 4) || (myTable.rows.length == (document.allPdbChains.length -1)))
+        {// probably set to num chains in PDB minus one.
+            document.getElementById("addChain1Button").disabled = true; 
+            alert("You have reached the maximum number of chains: 4");
+        }
+        document.remainingPdbChains.splice(document.remainingPdbChains.indexOf(myChainSelector.value ),1) ; // have to delete the selected element 
+        document.getElementById("addSubstitutionButton").disabled = false;
+        if ((document.getElementById("chains1Table").rows.length == 0) || ( document.getElementById("chains2Table").rows.length  == 0)){
+            document.getElementById("addSubstitutionButton").disabled = true; 
+        }
+        }
+    function deleteChainRow(numComplex){
+        //// Now have to add the value to be deleted, back to remainingPdbChains :
+        var myTable =  document.getElementById("chains" + numComplex + "Table");
+        var selectorToDelete = "complex" + numComplex + "ChainSelector" + (myTable.rows.length - 1);
+        var valueOfSelectorToDelete = document.getElementById(selectorToDelete).value;
+        console.log(valueOfSelectorToDelete);
+        console.log(document.remainingPdbChains);
+        //document.remainingPdbChains.push(valueOfSelectorToDelete);
+        if (document.remainingPdbChains.indexOf(valueOfSelectorToDelete) == -1){ 
+            document.remainingPdbChains.push(valueOfSelectorToDelete);} // The prior option is now available for use again
+        ////
+        console.log(document.remainingPdbChains);
+               
+        var tableNumRows = myTable.rows.length;
+        if (tableNumRows == 0) {
+           // do nothing
+           alert("Error");
+           //document.getElementById("deleteMutationButton").disabled = true; 
+        }
+        else {
+           myTable.deleteRow(myTable.rows.length - 1);
+           tableNumRows = myTable.rows.length; 
+           if (tableNumRows == 0) {
+               document.getElementById("deleteChain" + numComplex + "Button").disabled = true; 
+                 
+           }
+        }
+        document.getElementById("addChain" + numComplex + "Button").disabled = false; // If we removed a row, then we are definitely not at the maximum number of rows
+        if (document.getElementById("chains1Table").rows.length < (document.allPdbChains.length-1)){
+            document.getElementById("addChain1Button").disabled = false;
+        }
+        if (document.getElementById("chains2Table").rows.length < (document.allPdbChains.length-1)){
+            document.getElementById("addChain2Button").disabled = false;
+        }
+        if ((document.getElementById("chains1Table").rows.length == 0) || ( document.getElementById("chains2Table").rows.length  == 0)){
+            document.getElementById("addSubstitutionButton").disabled = true; 
+        }
+    }
+
+
+    function deleteSubstitutionRow(){
+        var myTable =  document.getElementById("substitutionTable");
+        var tableNumRows = myTable.rows.length;
+        if (tableNumRows == 0) {
+           // do nothing
+           alert("Error");
+           //document.getElementById("deleteMutationButton").disabled = true; 
+        }
+        else {
+           myTable.deleteRow(myTable.rows.length - 1);
+           tableNumRows = myTable.rows.length; 
+           if (tableNumRows == 0) {document.getElementById("deleteMutationButton").disabled = true; } 
+        }
+        document.getElementById("addSubstitutionButton").disabled = false; // If we removed a row, then we are definitely not at the maximum number of rows
+    }
+    function formSubmitProcedure(){
+        sortSubstitutionRows( );
+        console.log(document.readyState);
+        console.log(document.getElementById("mainForm"));
+        console.log(document.forms.length); 
+        console.log(document.forms[0]    ); 
+        console.log(document.getElementById("mainForm"));
+        if(document.readyState === 'complete'){} ;
+        document.forms[0].submit();        
+    }
+    function sortSubstitutionRows( ){
+        var mySubstitutionTable = document.getElementById("substitutionTable");  
+        function compareSubstitutionRows(j,k){
+            console.log(mySubstitutionTable.rows.length );
+            if (mySubstitutionTable.rows[j].cells[0].childNodes[0].value < mySubstitutionTable.rows[k].cells[0].childNodes[0].value ) {
+                console.log( " < " );
+                return 1;}
+            else if (mySubstitutionTable.rows[j].cells[0].childNodes[0].value == mySubstitutionTable.rows[k].cells[0].childNodes[0].value ) { // The chains are the same for j,k. So check the residue numbers.
+                if (mySubstitutionTable.rows[j].cells[1].childNodes[0].value < mySubstitutionTable.rows[k].cells[1].childNodes[0].value ){
+                    console.log( " < " );
+                    return 1;
+                } 
+                else if (mySubstitutionTable.rows[j].cells[1].childNodes[0].value > mySubstitutionTable.rows[k].cells[1].childNodes[0].value ){
+                    console.log( " > " );
+                    return -1;
+                } 
+                else {
+                    console.log( " ==" );
+                    return 0;
+                }
+            }
+            else if (mySubstitutionTable.rows[j].cells[0].childNodes[0].value > mySubstitutionTable.rows[k].cells[0].childNodes[0].value ) { 
+                console.log( " > " );
+                return -1;}
+        }
+        console.log(mySubstitutionTable.rows);
+        //mySubstitutionTable.rows.sort(sortSubstitutionRows);
+        for (var h = 1; h < mySubstitutionTable.rows.length; h++)
+            for (var i = 0; i < (mySubstitutionTable.rows.length - h) ; i++ )
+            {
+                if (compareSubstitutionRows( i ,i + 1) == 1) {
+                    console.log("NOT Swapping rows");
+                } // a<b, so do nothing
+                else if (compareSubstitutionRows( i ,i + 1 ) == 0) {
+                    alert("Error! There are two identical substitutions! Reset the page and start over.");1
+                }
+                else if (compareSubstitutionRows( i ,i + 1 )){ // Swap these two rows
+                    console.log("Swapping rows");
+                    mySubstitutionTable.rows[i].parentNode.insertBefore(mySubstitutionTable.rows[i + 1] ,mySubstitutionTable.rows[i]);
+                    console.log(" rows = " + mySubstitutionTable.rows.length);
+                    console.log(" rows = " + mySubstitutionTable.rows.length);
+                }
+             }
+        for (var h = 0; h < mySubstitutionTable.rows.length; h++) {
+            console.log("Row "+ h + " has : " + mySubstitutionTable.rows[h].cells[0].childNodes[0].value );  
+            // After sorting, we need to set the .id and .name properties of these selectors. 
+            mySubstitutionTable.rows[h].cells[0].childNodes[0].id = "chainId" + h;                                      
+            mySubstitutionTable.rows[h].cells[0].childNodes[0].name = mySubstitutionTable.rows[h].cells[0].childNodes[0].id;      
+            mySubstitutionTable.rows[h].cells[1].childNodes[0].id = "residueNumber" + h;                                      
+            mySubstitutionTable.rows[h].cells[1].childNodes[0].name = mySubstitutionTable.rows[h].cells[1].childNodes[0].id;      
+            mySubstitutionTable.rows[h].cells[2].childNodes[0].id = "substitutedResidueType" + h;                                      
+            mySubstitutionTable.rows[h].cells[2].childNodes[0].name = mySubstitutionTable.rows[h].cells[2].childNodes[0].id;      
+        }
+    }
+    function addSubstitutionRow(){
+        sortChainRows(1);  
+        sortChainRows(2);  
+        var complex1 = "";
+        var complex2 = "";
+        for (var i = 0; i < document.getElementById("chains1Table").rows.length; i++) complex1 += document.getElementById("chains1Table").rows[i].cells[0].childNodes[0].value;
+        for (var i = 0; i < document.getElementById("chains2Table").rows.length; i++) complex2 += document.getElementById("chains2Table").rows[i].cells[0].childNodes[0].value;
+        console.log(" >" + complex1 + "< ");
+        console.log(" >" + complex2 + "< ");
+        populatePdbPrimaryArray(complex1, complex2);
+        addChain1Button.disabled = true;
+        addChain2Button.disabled = true;
+        deleteChain1Button.disabled = true;
+        deleteChain2Button.disabled = true;
+        document.getElementById("deleteMutationButton").disabled = false; 
+        var mySubstitutionTable = document.getElementById("substitutionTable");  
+        var tableNumRows = mySubstitutionTable.rows.length;
+        mySubstitutionTable.insertRow(tableNumRows);  
+        mySubstitutionTable.rows[mySubstitutionTable.rows.length - 1].insertCell(0); 
+        mySubstitutionTable.rows[mySubstitutionTable.rows.length - 1].insertCell(1); 
+        mySubstitutionTable.rows[mySubstitutionTable.rows.length - 1].insertCell(2); 
+        // If the table has any prior entries, disable modification of those:
+        if (mySubstitutionTable.rows.length > 1){
+            //mySubstitutionTable.rows[mySubstitutionTable.rows.length - 2].cells[0].childNodes[0].disabled = true;
+            //mySubstitutionTable.rows[mySubstitutionTable.rows.length - 2].cells[1].childNodes[0].disabled = true;
+            //mySubstitutionTable.rows[mySubstitutionTable.rows.length - 2].cells[2].childNodes[0].disabled = true;
+        }
+
+        // Chain ID selector:
+        var myChainSelector = document.createElement("SELECT");
+
+        for (var i = 0 ; i< document.allPdbChains.length ; i++){
+            var myChainId = document.allPdbChains[i]; 
+            if (document.remainingPdbChains.indexOf(myChainId) == -1) {
+                var myOption = document.createElement("option");
+                myOption.value = myChainId; 
+                myOption.innerHTML = myChainId; 
+                myChainSelector.appendChild(myOption);}
+        }
+
+        mySubstitutionTable.rows[mySubstitutionTable.rows.length - 1].cells[0].appendChild(myChainSelector);
+
+        // Residue number selector:
+        var myResidueNumberSelector = document.createElement("SELECT");
+        myResidueNumberSelector.id = "residueNumber" + (mySubstitutionTable.rows.length - 1);
+        console.log(myResidueNumberSelector.id);
+        myResidueNumberSelector.name = myResidueNumberSelector.id;        
+        mySubstitutionTable.rows[mySubstitutionTable.rows.length - 1].cells[1].appendChild(myResidueNumberSelector); 
+        
+        var xhttp = new XMLHttpRequest();
+        updatePdbResidueIdArrayAndPopulateSelector();
+        var myTempResidueIdArray = []; // casting these as arrays
+        var myResidueIdArray = []; // casting these as arrays
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var myTempResidueIdArray = JSON.parse(this.responseText);
+                console.log(myTempResidueIdArray.length);
+                for (var i = 0; i < (mySubstitutionTable.rows.length - 1); i++){ // Note that this will not count the current row. If there is only one row in substitutionTable, then this loop will not run at all.
+                    console.log(i);
+                    // If the chain in substitution i matches the chain of the current substitution, then we need to remove a residue Id from the current  myTempResidueIdArray so it cannot be selected again:
+                    var valueToDelete = "" ; // cast as string
+                    if ( mySubstitutionTable.rows[i].cells[0].childNodes[0].value == mySubstitutionTable.rows[mySubstitutionTable.rows.length - 1].cells[0].childNodes[0].value) {
+                        valueToDelete = mySubstitutionTable.rows[i].cells[1].childNodes[0].value;
+                        residueIdIndexToDelete = myTempResidueIdArray.indexOf(valueToDelete);                                
+                        for (var j = 0; j < myTempResidueIdArray.length; j++){
+                            //console.log(" >" + myTempResidueIdArray[j].residueId + "< compared to >" + valueToDelete +"<");
+                            if (myTempResidueIdArray[j].residueId == valueToDelete) {residueIdIndexToDelete = j;}
+                        }
+                        myTempResidueIdArray.splice(residueIdIndexToDelete,1); // Remove the already-used residue ID.
+                        console.log(mySubstitutionTable.rows[i].cells[1].childNodes[0].value);
+                        console.log(residueIdIndexToDelete);                        
+                    }
+                } 
+                console.log(myTempResidueIdArray.length);
+                myResidueIdArray = [];
+                for (var i = 0; i< myTempResidueIdArray.length; i++){
+                    var myResidueId = ""; // let's cast the elements as strings early on
+                    myResidueId = myTempResidueIdArray[i].residueId;
+                    myResidueIdArray.push(myResidueId); // This should be an ordinary array, rather than an array of key-values .
+                }
+           } else {
+           }
+           populateResidueNumberSelector();
+        }; 
+        myResidueNumberSelector.onchange = function(){
+            //sortSubstitutionRows();
+        }
+        function updatePdbResidueIdArrayAndPopulateSelector(){
+            console.log("check 1");
+            xhttp.open("POST", "calls.php", true ); // Going with asynchronous as I don't want to move on until the chains are ready. Revisit this decision later.
+            xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // this turns out to be crucial!
+            // Argument is user-provided PDB ID:
+            var myChainId = myChainSelector.value;
+            console.log(myChainId);
+            xhttp.send("restcall=getPdbResidueIds&arguments[0]=" +  document.getElementById("pdbId").value + "&" + "arguments[1]=" + myChainId ) ; // calls.php contains a SWITCH on 'restcall'
+        }
+        function populateResidueNumberSelector(){
+            var totalChildren = myResidueNumberSelector.childElementCount;
+            for (var i= 0; i < totalChildren; i++) {
+                //console.log(i);
+                myResidueNumberSelector.removeChild(myResidueNumberSelector.childNodes[0]);}
+            console.log(myResidueIdArray.length);
+            for (var i = 0 ; i< myResidueIdArray.length ; i++){
+                //console.log(i);
+                var myResidueId = myResidueIdArray[i];
+                var myOption = document.createElement("option");
+                myOption.value = myResidueId;
+                myOption.innerHTML = myResidueId;
+                myResidueNumberSelector.appendChild(myOption);
+            }
+        } 
+
+        // Substituted residue type selector
+        var mySubstitutedResidueTypeSelector = document.createElement("SELECT");
+        // best to set the name and id properties after sorting. Could also set them here, can revisit decision later.
+        //mySubstitutedResidueTypeSelector.id = "substitutedResidueType" + (mySubstitutionTable.rows.length - 1);
+        //mySubstitutedResidueTypeSelector.name = mySubstitutedResidueTypeSelector.id ;                
+       // myResidueNumberSelector.id = "residueNumber" + (mySubstitutionTable.rows.length - 1);
+        //myResidueNumberSelector.name = myResidueNumberSelector.id;
+        
+        function populatemySubstitutedResidueTypeSelector(){
+            
+            var aminoAcidTypes = ["?","A","R","N","D","C","E","Q","G","H","I","L","K","M","F","P","S","T","W","Y","V"];
+            for (var i = 0; i < aminoAcidTypes.length ; i++){
+                var mySubstitutedResidueTypeOption = document.createElement("option");
+                mySubstitutedResidueTypeOption.value = aminoAcidTypes[i];
+                mySubstitutedResidueTypeOption.innerHTML = aminoAcidTypes[i]; 
+                mySubstitutedResidueTypeSelector.appendChild(mySubstitutedResidueTypeOption);
+            };
+        }
+        populatemySubstitutedResidueTypeSelector();
+        mySubstitutionTable.rows[mySubstitutionTable.rows.length - 1].cells[2].appendChild(mySubstitutedResidueTypeSelector); 
+        console.log(myResidueNumberSelector.value);
+        mySubstitutedResidueTypeSelector.onfocus = function(){repopulateSubstitutedAminoAcidTypeOptions(mySubstitutedResidueTypeSelector.parentNode.parentNode.rowIndex);}
+        //repopulateSubstitutedAminoAcidTypeOptions(mySubstitutedResidueTypeSelector,document.getElementById("pdbId").value,   myChainSelector.value,myResidueNumberSelector.value );
+
+        // If we reached the maximum number of rows, disable the add mutation button
+        if (mySubstitutionTable.rows.length == 4){
+            document.getElementById("addSubstitutionButton").disabled = true; 
+            alert("You have reached the maximum number of mutations: 4");
+        }
+        }
+
+
+
+function repopulateSubstitutedAminoAcidTypeOptions(rowIndex){
+//function repopulateSubstitutedAminoAcidTypeOptions(localSubstitutedResidueTypeSelector, pdbId, chainId, residueId){
+    /*
+    var mySubstitutionTable = document.getElementById("substitutionTable");
+    var pdbId = "1AXI"; //document.getElementById("pdbId").value;
+    var localSubstitutedResidueTypeSelector =  mySubstitutionTable.rows[ rowIndex ].cells[2].childNodes[0];
+    //var rowIndex = localSubstitutedResidueTypeSelector.parentNode.parentNode.rowIndex;
+    //console.log(localSubstitutedResidueTypeSelector, pdbId, chainId, residueId);
+    var aminoAcidTypes = ["?","A","R","N","D","C","E","Q","G","H","I","L","K","M","F","P","S","T","W","Y","V"];
+            var chainId   = mySubstitutionTable.rows[ rowIndex ].cells[0].childNodes[0].value;
+            console.log(chainId);
+            var residueId = mySubstitutionTable.rows[ rowIndex ].cells[1].childNodes[0].value;
+            console.log(residueId);
+    var xhttp = new XMLHttpRequest(); 
+
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            console.log((this.responseText)) ;
+            console.log(JSON.parse(this.responseText)) ;
+            var myTempAminoAcidTypeArray = JSON.parse(this.responseText);
+            //return (myTempAminoAcidTypeArray[0].aminoAcidType);
+          while (localSubstitutedResidueTypeSelector.hasChildNodes()) {
+              localSubstitutedResidueTypeSelector.removeChild(node.lastChild);
+          }
+            for (var i = 0; i < aminoAcidTypes.length ; i++){ 
+                if (myTempAminoAcidTypeArray[0].aminoAcidType != aminoAcidTypes[i]) {
+                    var mySubstitutedResidueTypeOption = document.createElement("option");
+                    mySubstitutedResidueTypeOption.value = aminoAcidTypes[i];
+                    mySubstitutedResidueTypeOption.innerHTML = aminoAcidTypes[i]; 
+                    localSubstitutedResidueTypeSelector.appendChild(mySubstitutedResidueTypeOption);
+                }
+            };
+        } else {
+            console.log(this.status) ;
+            console.log(this.readystate) ;
+            console.log((this.responseText)) ;
+        }
+    }
+    xhttp.open("POST", "calls.php", true );
+    xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // this turns out to be crucial!
+    var callString ="restcall=getPdbChains&arguments[0]=" + pdbId ; // + "&arguments[1]=" + chainId + "&arguments[2]=" + residueId;
+    //var callString ="restcall=getWildTypeAminoAcidType&arguments[0]=" + pdbId + "&arguments[1]=" + chainId + "&arguments[2]=" + residueId;
+    console.log(callString);
+    xhttp.send("callString");
+    */
+
+
+
+            var mySubstitutionTable = document.getElementById("substitutionTable");
+            var localSubstitutedResidueTypeSelector =  mySubstitutionTable.rows[ rowIndex ].cells[2].childNodes[0];
+            var xhttp = new XMLHttpRequest(); // May need variant to handle old IE browsers https://www.w3schools.com/js/js_ajax_http.asp
+            console.log("Detected 1 at your PDB ID is valid. You may now add chains.");
+
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    console.log(JSON.parse(this.responseText)) ;
+                    var myWildTypeResidueType = JSON.parse(this.responseText);
+		    while (localSubstitutedResidueTypeSelector.hasChildNodes()) {
+		        localSubstitutedResidueTypeSelector.removeChild(localSubstitutedResidueTypeSelector.childNodes[0]);
+		    }
+                    var aminoAcidTypes = ["?","A","R","N","D","C","E","Q","G","H","I","L","K","M","F","P","S","T","W","Y","V"];
+                    for (var i = 0; i< aminoAcidTypes.length; i++){
+                        console.log(myWildTypeResidueType[0].aminoAcidType);  
+                        console.log(aminoAcidTypes[i]);  
+                        //document.allPdbChains.push(myWildTypeResidueType[i].chainId); // trying to make sure the array gets passed by value not reference
+                        //document.remainingPdbChains.push(myWildTypeResidueType[i].chainId); // trying to make sure the array gets passed by value not reference
+                        if (aminoAcidTypes[i] != myWildTypeResidueType[0].aminoAcidType){
+                            var mySubstitutedResidueTypeOption = document.createElement("option");
+                            mySubstitutedResidueTypeOption.value = aminoAcidTypes[i];  
+                            mySubstitutedResidueTypeOption.innerHTML = aminoAcidTypes[i];                       
+                            localSubstitutedResidueTypeSelector.appendChild(mySubstitutedResidueTypeOption);
+                        }
+                    }
+                } else {
+                    console.log(this.status) ;
+                }
+            }; 
+            xhttp.open("POST", "calls.php", true ); // Going with asynchronous as I don't want to move on until the chains are ready. Revisit this decision later.
+            console.log(this.status) ;
+            xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // this turns out to be crucial!
+            console.log(document.getElementById("pdbId").value );
+            var pdbId = document.getElementById("pdbId").value;
+            var chainId   = mySubstitutionTable.rows[ rowIndex ].cells[0].childNodes[0].value;
+            var residueId = mySubstitutionTable.rows[ rowIndex ].cells[1].childNodes[0].value;
+            // Argument is user-provided PDB ID:
+            var callString ="restcall=getWildTypeAminoAcidType&arguments[0]=" + pdbId + "&arguments[1]=" + chainId + "&arguments[2]=" + residueId;
+            //var callString ="restcall=getPdbChains&arguments[]=" + document.getElementById("pdbId").value;                                        
+	    console.log(callString);
+	    xhttp.send(callString); 
+            //xhttp.send("restcall=getWildTypeAminoAcidType&arguments[]=" + document.getElementById("pdbId").value ); // calls.php contains a SWITCH on 'restcall'
+            //xhttp.send("restcall=getPdbChains&arguments[]=" + document.getElementById("pdbId").value ); // calls.php contains a SWITCH on 'restcall'
+}
+</script>
+
+</html>
+
+

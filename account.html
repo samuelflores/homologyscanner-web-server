@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Account Information Screen</title>
+</head>
+<body>
+	<div id="account-mid">
+		<div id="acc-div" class="k-header">
+			<div id="acc-info">
+				<h2>Account Information</h2>
+				<div id="accUpdateForm-div">
+					<form id="accUpdateForm" method="post" action="">
+						<table align="center">
+							<tr>
+								<th align="left">Email:</th>
+								<th id="user-email" name="user-email"></th>
+							</tr>
+							<tr>
+								<th align="left">First Name:</th>
+								<th>
+									<input id="fname-edit" name="fname-edit" class="k-textbox" type="text" readonly/>
+								</th>
+							</tr>
+							<tr>
+								<th align="left">Last Name:</th>
+								<th>
+									<input id="lname-edit" name="lname-edit" class="k-textbox" type="text" readonly/>
+								</th>
+							</tr>
+							<tr>
+								<th align="left">Purpose:</th>
+								<th>
+									<input id="purpose-edit" name="purpose-edit" readonly/>
+								</th>
+							</tr>
+							<tbody id="passChange">
+								<tr>
+									<th align="left">Old Password:</th>
+									<th>
+										<input id="oldPass" name="oldPass" class="k-textbox" type="password" />
+									</th>
+								</tr>
+								<tr>
+									<th align="left">New Password:</th>
+									<th>
+										<input id="newPass1" name="newPass1" class="k-textbox" type="password" />
+									</th>
+								</tr>
+								<tr>
+									<th align="left">Confirm Password:</th>
+									<th>
+										<input id="newPass2" name="newPass2" class="k-textbox" type="password" onkeyup="checkPass(); return false;" />
+									</th>
+								</tr>
+							</tbody>
+						</table>
+					</form>
+					<div id="btns-div">
+						<button class="k-button" id="edit-btn">Edit</button>
+						<button class="k-button" id="changePass-btn">Change Password</button>
+						<button class="k-button" id="save-btn">Save</button>
+					</div>
+				</div>
+			</div>
+			<div id="acc-evals">
+				<h2>Evaluations</h2>
+				<div id="evals">
+					<div id="selectCBs">
+						<span>
+							Project:<input id="projectSelect" name="projectSelect" style="width: 180px;"/>
+						</span>
+						<span>
+							Mutation:<input id="mutationSelect" name="mutationSelect" style="width: 100px;"/>
+						</span>
+					</div>
+					<table id="eval-table">
+						<tr style="height: 36px">
+							<th>
+								<label for="status">Status:</label>
+							</th>
+							<th style="width: 88px;">
+								<span id="status"></span>
+							</th>
+							<th>
+								<label for="saved">Saved:</label>
+							</th>
+							<th style="width: 179px;">
+								<span id="saved"></span>
+							</th>
+						</tr>
+						<tr>
+							<th>
+								<label for="notes">Notes:</label>
+							</th>
+							<th colspan="3">
+								<div id="notes"></div>
+							</th>
+						</tr>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+		var purpose,pswrdChange = false;
+		
+		$("#loading-img").fadeIn("slow");
+
+		$("#edit-btn").click(function() {
+			$('[id$="edit"]').prop('readonly', false);
+			purpose.enable(true);
+			$(this).hide();
+			$("#changePass-btn").fadeIn("slow");
+			$("#save-btn").fadeIn("slow");
+		});
+		
+		$("#changePass-btn").click(function() {
+			$("#passChange").fadeIn("slow");
+			pswrdChange = true;
+			$(this).hide();
+		});
+		
+		function checkPass()
+		{
+			//Store the password field objects into variables ...
+			var pass1 = document.getElementById('newPass1');
+			var pass2 = document.getElementById('newPass2');
+			//Set the colors we will be using ...
+			var goodColor = "#66cc66";
+			var badColor = "#ff6666";
+			//Compare the values in the password field
+			//and the confirmation field
+			if(pass1.value == pass2.value){
+				//The passwords match.
+				//Set the color to the good color and inform
+				//the user that they have entered the correct password
+				pass2.style.backgroundColor = goodColor;
+				return true;
+			}else{
+				//The passwords do not match.
+				//Set the color to the bad color and
+				//notify the user.
+				pass2.style.backgroundColor = badColor;
+				return false;
+			}
+		}
+		
+		$("#save-btn").click(function() {
+			if (pswrdChange) {
+				if (!checkPass()) {
+					popupNotification.show("Password confirmation incorrect.", "warning");
+					return false;
+				}
+				$("#loading-img").fadeIn("slow");
+				passwordChange($("#oldPass").val(),$("#newPass1").val())
+				
+			}else {
+				$("#loading-img").fadeIn("slow");
+				infoChange($("#fname-edit").val(), $("#lname-edit").val(), $("#purpose-edit").val());
+			}
+		});
+		
+		$("#purpose-edit").kendoDropDownList({
+			dataSource: purposeData,
+			dataTextField: "type",
+			dataValueField: "id",
+			enable: false
+		});
+		purpose = $("#purpose-edit").data("kendoDropDownList");
+
+		function loadAccInfo() {
+			$("#loading-img").fadeIn("slow");
+			
+			$.ajax({
+				type: "POST",
+				url: "calls.php",
+				dataType: 'json',
+				data: {restcall: 'getUserInfo', arguments: [user]},
+				success: function(accInfo_data) {
+					$("#user-email").html(accInfo_data.email);
+					$("#fname-edit").val(accInfo_data.fname);
+					$("#lname-edit").val(accInfo_data.lname);
+					purpose.select(accInfo_data.purpose - 1);
+					loadAccEvaluations();
+				},
+				error: function(accInfo_jqXHR, accInfo_textStatus, accInfo_errorThrown) {
+					popupNotification.show("Error: " + accInfo_jqXHR.responseText, "error");
+					$("#loading-img").fadeOut("slow");
+				}
+			});
+		};
+
+		function loadAccEvaluations() {
+			$.ajax({
+				type: "POST",
+				url: "calls.php",
+				dataType: 'json',
+				data: {restcall: 'getUserEvals', arguments: [user]},
+				success: function(accEvals_data) {
+					var projectsArray = [];
+					var distinct_check = [];
+
+					$.each(accEvals_data, function(index, value) {
+						if ($.inArray(value.projectName, distinct_check)==-1) {
+							distinct_check.push(value.projectName);
+							projectsArray.push({"projectName":value.projectName});
+						}
+					});
+					
+					projectSelectCB.enable(true);
+					projectSelectCB.value("");
+					projectSelectCB.setDataSource(projectsArray);
+					mutationSelectCB.setDataSource(accEvals_data);
+					
+					$("#loading-img").fadeOut("slow");
+				},
+				error: function(accEvals_jqXHR, accEvals_textStatus, accEvals_errorThrown) {
+					popupNotification.show("Error: " + accEvals_jqXHR.responseText, "error");
+					$("#loading-img").fadeOut("slow");
+				}
+			});
+		}
+		
+		function infoChange(newFname, newLname, newPurpose) {
+			$.ajax({
+				type: "POST",
+				url: "calls.php",
+				dataType: 'json',
+				data: {restcall: 'userInfoChange', arguments: [user, newFname, newLname, newPurpose]},
+				success: function(data) {
+					popupNotification.show("Account information updated successfully", "success");
+					$("#loading-img").fadeOut("slow");
+					$("#content").load("account.html");
+				},
+				error: function(infoChange_jqXHR, textStatus, errorThrown) {
+					popupNotification.show("Account information update error: " + infoChange_jqXHR.responseText, "error");
+					$("#loading-img").fadeOut("slow");
+				}
+			});
+		};
+		
+		function passwordChange(oldPass,newPass) {
+			$.ajax({
+				type: "POST",
+				url: "calls.php",
+				dataType: 'json',
+				data: {restcall: 'passwdChange', arguments: [user,oldPass,newPass]},
+				success: function(data) {
+					infoChange($("#fname-edit").val(), $("#lname-edit").val(), $("#purpose-edit").val());
+				},
+				error: function(pswdChange_jqXHR, textStatus, errorThrown) {
+					popupNotification.show("Password change error: " + pswdChange_jqXHR.responseText, "error");
+					$("#loading-img").fadeOut("slow");
+				}
+			});
+		};
+		
+		function showEvaluation(e) {
+			$("#saved").html(mutationSelectCB.dataItem(e.item.index()).changed);
+			$("#status").html(mutationSelectCB.dataItem(e.item.index()).status);
+			$("#notes").html(mutationSelectCB.dataItem(e.item.index()).note);
+		}
+		
+		function emptyEvaluation() {
+			$("#saved").html("");
+			$("#status").html("");
+			$("#notes").html("");
+		}
+		
+		var projectSelectCB = $("#projectSelect").kendoComboBox({
+			dataTextField: "projectName",
+			dataValueField: "projectName",
+			placeholder: "Select Project...",
+			filter: "contains",
+			enable: false,
+			select: emptyEvaluation
+		}).data("kendoComboBox");
+		
+		var mutationSelectCB = $("#mutationSelect").kendoComboBox({
+			cascadeFrom: "projectSelect",
+			dataTextField: "mutation",
+			dataValueField: "mutation",
+			placeholder: "Mutation...",
+			filter: "contains",
+			select: showEvaluation
+		}).data("kendoComboBox");
+		
+		$(document).ready(function() {
+			loadAccInfo();
+		});
+
+    </script>
+	<style>
+		html {
+			font-family: Arial, Helvetica, sans-serif;
+		}
+		
+		html,body {
+			height:100%;
+			width: 100%;
+			margin: 0;
+			padding: 0;
+		}
+		
+		#account-mid {
+			font-size: 75%;
+			margin: 0;
+			height: 100%;
+			background: url("images/WAL-5.jpg") no-repeat center center fixed;
+			background-size: cover;
+			text-align:center;
+		}
+		
+		#acc-div {
+			border-radius: 10px 10px 10px 10px;
+			border-style: solid;
+			border-width: 1px;
+			overflow: visible;
+			width: 700px;
+			margin: auto;
+			padding: 10px 20px;
+			opacity: 0.85;
+			position: relative;
+			top: 20%;
+			overflow: auto;
+		}
+		
+		#acc-info {
+			float: left;
+			width: 45%;
+		}
+		
+		#acc-evals {
+			float: right;
+			width: 55%;
+		}
+		
+		#evals {
+			max-height: 255px;
+			text-align: center;
+		}
+		
+		#selectCBs {
+			height: 30px;
+		}
+		
+		#eval-table {
+			border: 1px solid white;
+			width: 100%;
+			height: 146px;
+		}
+		
+		#eval-table th {
+			border: 1px solid white;
+		}
+		
+		#eval-table th span {
+			color: #F4AF03;
+		}
+		
+		#notes {
+			text-align: left;
+			height: 90px;
+			width: 314px;
+			word-break: break-all;
+			padding: 3px;
+		}
+
+		#fname-edit,#lname-edit,#purpose-edit,#newPass1,#newPass2,#oldPass {
+			width: 100%;
+		}
+		
+		#btns-div {
+			text-align: center;
+			margin: 23px 0;
+		}
+		
+		#passChange, #changePass-btn, #save-btn {
+			display: none;
+		}
+		
+		#edit-btn, #save-btn, #changePass-btn {
+			min-width: 100px;
+			height: 30px;
+			font-size: 14px;
+		}
+	</style>
+</body>
+</html>

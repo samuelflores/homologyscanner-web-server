@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html
+	style="overflow-y: scroll; overflow-x: scroll; font: 75% 'Lucida Sans Unicode', 'Lucida Grande', arial, helvetica, sans-serif; background: #e2e2e2;">
+<head>
+<title>Registration Screen</title>
+
+<link href="styles/kendo.common.css" rel="stylesheet">
+<link href="styles/kendo.blueopal.css" rel="stylesheet">
+
+<script src="js/jquery.min.js"></script>
+<script src="js/kendo.web.min.js"></script>
+<script src="shared/js/console.js"></script>
+</head>
+<body style="margin: 0; padding: 0;" onload="populateUse()">
+	<div id="top"
+		style="height: 75px; background-image: url('images/Top.png');"></div>
+	<div id="mid" class="k-content">
+
+		<div id="reg-screen" class="k-header">
+		
+			<div id="loading" class="k-header">
+				<img src="styles/BlueOpal/loading-image.gif"
+					style="border-style: none;" width="100" height="100" />
+			</div>
+			<h2>Registration Form</h2>
+			<form id="regForm" method="post" action="insert.php">
+				<table align="center">
+					<tr>
+						<th align="left">Email:</th>
+						<th><span style=""
+							class="k-widget k-autocomplete k-header k-state-default">
+								<input id="email" name="email" class="k-input" type="text"
+								value="" style="width: 100%"/><span class="coupontooltip">Content 1</span>
+						</span></th>
+					</tr>
+					<tr>
+						<th align="left">Password:</th>
+						<th><span style=""
+							class="k-widget k-autocomplete k-header k-state-default">
+								<input id="passw" name="passw" class="k-input" type="password"
+								value="" style="width: 100%" />
+						</span></th>
+					</tr>
+					<tr>
+						<th align="left">Confirm Password:</th>
+						<th><span style=""
+							class="k-widget k-autocomplete k-header k-state-default">
+								<input name="passw2" id="passw2" onkeyup="checkPass(); return false;" class="k-input" type="password"
+								value="" style="width: 100%" />
+								<span id="confirmMessage" class="confirmMessage"></span>
+						</span></th>
+					</tr>
+					<tr>
+						<th align="left">First Name:</th>
+						<th><span style=""
+							class="k-widget k-autocomplete k-header k-state-default">
+								<input id="fname" name="fname" class="k-input" type="text"
+								value="" style="width: 100%" />
+						</span></th>
+					</tr>
+					<tr>
+						<th align="left">Last Name:</th>
+						<th><span style=""
+							class="k-widget k-autocomplete k-header k-state-default">
+								<input id="lname" name="lname" class="k-input" type="text"
+								value="" style="width: 100%" />
+						</span></th>
+					</tr>
+					<tr>
+						<th align="left">Use:</th>
+						<th><span style=""
+							class="k-widget k-autocomplete k-header k-state-default">
+								<div id="usediv"> </div>
+						</span></th>
+					</tr>
+				</table>
+			</form>
+			<p align="center">
+				<button class="k-button" id="reg">Register</button>
+			</p>
+
+		</div>
+		
+		<script>
+            	$("#loading").hide();
+				
+				$("#email").keyup(function(event){
+                	if(event.keyCode == 13){
+                    	$("#reg").click();
+                	}
+            	});
+				
+            	$("#passw").keyup(function(event){
+                	if(event.keyCode == 13){
+                    	$("#reg").click();
+                	}
+            	});
+				
+				function checkPass()
+				{
+					//Store the password field objects into variables ...
+					var pass1 = document.getElementById('passw');
+					var pass2 = document.getElementById('passw2');
+					//Store the Confimation Message Object ...
+					var message = document.getElementById('confirmMessage');
+					//Set the colors we will be using ...
+					var goodColor = "#66cc66";
+					var badColor = "#ff6666";
+					//Compare the values in the password field
+					//and the confirmation field
+					if(pass1.value == pass2.value){
+						//The passwords match.
+						//Set the color to the good color and inform
+						//the user that they have entered the correct password
+						pass2.style.backgroundColor = goodColor;
+						//message.style.color = goodColor;
+						//message.innerHTML = "Passwords Match!"
+					}else{
+						//The passwords do not match.
+						//Set the color to the bad color and
+						//notify the user.
+						pass2.style.backgroundColor = badColor;
+						//message.style.color = badColor;
+						//message.innerHTML = "Passwords Do Not Match!"
+					}
+				}
+
+				function createRequest() {
+					var res;
+					if (window.XMLHttpRequest) {
+					// FireFox, Safari, etc.
+						res = new XMLHttpRequest();
+						//result.overrideMimeType('text/plain'); // Or anything else
+					}
+					else if (window.ActiveXObject) {
+					// MSIE
+						res = new ActiveXObject("Microsoft.XMLHTTP");
+					} 
+					else {
+					// No known mechanism -- consider aborting the application
+						alert("Non-Compatible Browser!");
+					}
+					return res;
+				}
+				
+				//ht = "<select id='use' name='use' style='width: 100%'><option value='volvo'>Volvo</option><option value='saab'>Saab</option><option value='opel'>Opel</option><option value='audi'>Audi</option></select>";
+				
+				function populateUse() {
+					// function below will run clear.php?h=michael
+					$.ajax({
+						type: "GET",
+						url: "use_types.php" ,                   
+						complete : function(data) {
+							//alert(data);
+							$("#usediv").html(data);
+							if (jQuery.isEmptyObject(data)) {
+								alert("Failed to get use_types.php data...!");
+							}
+							else {
+								$("#usediv").html(data);
+							}
+						}
+					});
+				}
+				
+				$("#reg").click(function() {
+					
+					if ( $("#email").val()=="" || $("#pswrd").val()=="" )
+					  {
+					  alert("Please fill in your Credentials!");
+					  return false;
+					  }
+					$("#loading").fadeIn("slow");
+					var valReq = createRequest();
+					var servURL = "rest";
+					var classURL = "/webServ/accVal";
+					var paramsURL = "?accID=" + $("#accID").val() + "&username=" + $("#username").val() + "&pswrd=" + $("#pswrd").val();
+					var getUrl = servURL + classURL + paramsURL;
+					var putUrl = servURL + classURL;
+					
+					valReq.open("put", putUrl, true);
+					valReq.setRequestHeader("Content-type","text/xml");
+					var putTxt = "<credentials><accountID>" + $("#accID").val() + "</accountID><username>" + $("#username").val() + "</username><password>" + $("#pswrd").val() + "</password></credentials>";
+					valReq.send(putTxt);
+
+					valReq.onreadystatechange = function() {
+						if (valReq.readyState != 4) {
+							return;
+						}
+						if (valReq.status != 200) {
+							alert("Error: " + valReq.status);
+							$("#loading").fadeOut("slow");
+							return;
+						}
+						$("#loading").fadeOut("slow");
+						if (valReq.responseText == "false") {
+							alert("Registration: " + valReq.responseText);
+							return;
+						}
+						$("#regForm").submit();
+					};
+					
+                });
+        </script>
+		<style scoped>
+			#mid {
+				margin: 0px 0;
+				padding: 0px 0;
+				border: solid #999;
+				border-width: 1px 0;
+				height: 500px;
+				background-color: #e2e2e2;
+			}
+
+			#loading {
+				font-size: x-large;
+				font-weight: bold;
+				text-align: center;
+				text-decoration: blink;
+				position: absolute;
+				border-radius: 10px 10px 10px 10px;
+				border-style: solid;
+				border-width: 0px;
+				height: 150px;
+				width: 260px;
+				z-index: 1;
+				padding: 20px 20px 0 20px;
+				background-image: none;
+			}
+			
+			.coupontooltip {
+				height: auto;
+				display: block;
+				background: #C8C8C8;
+				bottom: auto;
+				top: 0;
+				left: 100%;
+				padding: 10px;
+				position: absolute;
+				z-index: 1000;
+				width: auto;
+				-webkit-transition: opacity 0.3s ease-out;
+				opacity: 1; 
+				overflow: hidden;
+			}
+
+			.k-widget.k-autocomplete.k-header.k-state-default:hover .coupontooltip {
+				opacity: 1;
+			}
+			
+			#reg-screen {
+				border-radius: 10px 10px 10px 10px;
+				border-style: solid;
+				border-width: 1px;
+				overflow: visible;
+				width: 300px;
+				margin: 30px auto;
+				padding: 20px 20px 10px 20px;
+				background-position: 0 -15px;
+				opacity: 0.85;
+			}
+
+			#reg-screen h2 {
+				font-weight: bold;
+				text-align: center;
+			}
+
+			#reg {
+				width: 100px;
+				height: 30px;
+				font-size: 14px;
+				background-image: url('images/logbutton.png');
+				color: black;
+			}
+
+			.k-button:hover {
+				color: lightblue !important;
+			}
+
+			.k-button:active {
+				background-image: url('images/logbuttonclck.png') !important;
+				color: lightblue !important;
+			}
+		
+		</style>
+	</div>
+	<div id="bot"
+		style="height: 90px; background-image: url('images/bottom-bg.png')">
+	</div>
+</body>
+</html>
