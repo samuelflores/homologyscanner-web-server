@@ -5,10 +5,10 @@ include ('db.php');
 include ('fs.php');
 include ('utils.php');
 define('flag', TRUE);
-include (__DIR__ . '/../contents/dtypes.php');
+include ('dtypes.php');
 
 $aResult = array();
-const LOCAL_FPATH = '/var/www/html/homologyScanner/temp/';
+const LOCAL_FPATH = webrootdirectory . '/temp/';
 
 //$_POST['restcall'] = parse_url($_SERVER["_POST"]);
 //$_POST['arguments'] = parse_url($_SERVER["_ARGS"]);
@@ -59,7 +59,7 @@ if(!isset($aResult['error'])){
                                 echo $aResult['error'];
                         }
                         else {
-                                $db = new Database(key1, key2, key3, key4);
+                                $db = new Database(webhost, webusername, webpassword, mmbdatabase);
                                 $db->connect();
                                 $aResult['result'] = $db->getSynopsisTable($_POST['arguments'][0],$_POST['arguments'][1], $_POST['arguments'][2], $_POST['arguments'][3] );
                                 $db->disconnect();
@@ -80,7 +80,7 @@ if(!isset($aResult['error'])){
                                 echo $aResult['error'];
                         }
                         else {
-                                $db = new Database(key1, key2, key3, key4);
+                                $db = new Database(webhost, webusername, webpassword, mmbdatabase);
                                 $db->connect();
                                 $aResult['result'] = $db->getSynopsisTableFromHomolog($_POST['arguments'][0],$_POST['arguments'][1], $_POST['arguments'][2], $_POST['arguments'][3] );
                                 $db->disconnect();
@@ -101,7 +101,7 @@ if(!isset($aResult['error'])){
                                 echo $aResult['error'];
                         }
                         else {
-                                $db = new Database(key1, key2, key3, key4);
+                                $db = new Database(webhost, webusername, webpassword, mmbdatabase);
                                 $db->connect();
                                 //console.log("check 6.0");
                                 //console.log($_POST['arguments'][0]);
@@ -131,7 +131,7 @@ if(!isset($aResult['error'])){
 				$mutation = $_POST['arguments'][2];
 				$status = $_POST['arguments'][3];
 				
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 				
 				$aResult['result'] = $db->evaluation($email, $jobName, $mutation, $status, $_POST['arguments'][4]);
@@ -157,7 +157,7 @@ if(!isset($aResult['error'])){
 				$pdbId    = $_POST['arguments'][2];
 				$mutation = $_POST['arguments'][3];
 				
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 				
 				$aResult['result'] = $db->getEval($email, $jobName,$pdbId, $mutation);
@@ -183,7 +183,7 @@ if(!isset($aResult['error'])){
 				$email = $_POST['arguments'][0];
 				$old_passwd = $_POST['arguments'][1];
 				$new_passwd = $_POST['arguments'][2];
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 				
 				$aResult['result'] = $db->changePasswd($email, $old_passwd, $new_passwd);
@@ -206,7 +206,7 @@ if(!isset($aResult['error'])){
 				$email = $_POST['arguments'][0];
 				$nFname = $_POST['arguments'][1];
 
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 				
 				$aResult['result'] = $db->changeFame($email, $nFname);
@@ -229,7 +229,7 @@ if(!isset($aResult['error'])){
 				$email = $_POST['arguments'][0];
 				$nLname = $_POST['arguments'][1];
 
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 				
 				$aResult['result'] = $db->changeLname($email, $nLname);
@@ -252,7 +252,7 @@ if(!isset($aResult['error'])){
 				$email = $_POST['arguments'][0];
 				$nPurpose = $_POST['arguments'][1];
 
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 				
 				$aResult['result'] = $db->changePurpose($email, $nPurpose);
@@ -278,7 +278,7 @@ if(!isset($aResult['error'])){
 				$nlname = $_POST['arguments'][2]; 
 				$nPurpose = $_POST['arguments'][3];
 
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 				
 				$aResult['result'] = $db->updateUserInfo($email, $nfname, $nlname, $nPurpose);
@@ -300,7 +300,7 @@ if(!isset($aResult['error'])){
 			else {
 				$email = $_POST['arguments'][0];
 
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 				
 				$aResult['result'] = $db->userInfo($email);
@@ -326,7 +326,7 @@ if(!isset($aResult['error'])){
 				$lname = $_POST['arguments'][3];
 				$purpose = $_POST['arguments'][4];
 				
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 				
 				$aResult['result'] = $db->userReg($email, $passwd, $fname, $lname, $purpose);
@@ -346,7 +346,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 
 				$aResult['result'] = $db->userLogin($_POST['arguments'][0], $_POST['arguments'][1]);
@@ -366,7 +366,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 
 				$aResult['result'] = $db->getEvalList($_POST['arguments'][0]);
@@ -399,7 +399,7 @@ if(!isset($aResult['error'])){
                                  $complexHomolog = $_POST['arguments'][2];
                                  $mString = $_POST['arguments'][3];
                                  $sessionID = stripslashes($_POST['arguments'][4]);
-                                 $db = new Database(key1, key2, key3, key4);
+                                 $db = new Database(webhost, webusername, webpassword, mmbdatabase);
                                  $db->connect();
                                  //SCF This should still be fine. However it should be the overarching directory, we will need the primaryPdbId and homologPdbId:
                                  $remotePath = $db->getProjectDir($jobName);
@@ -466,7 +466,7 @@ if(!isset($aResult['error'])){
 				$jobName = $_POST['arguments'][0];
 				$mString = $_POST['arguments'][1];
 				$sessionID = stripslashes($_POST['arguments'][2]);
-				$db = new Database(key1, key2, key3, key4);
+				$db = new Database(webhost, webusername, webpassword, mmbdatabase);
 				$db->connect();
 
 				$remotePath = $db->getProjectDir($jobName);
@@ -543,9 +543,9 @@ if(!isset($aResult['error'])){
 					$cred = 0;
 				}
 				
-                                // key4 is database 'mmb'
+                                // mmbdatabase is database 'mmb'
                                 //echo "howdy";
-				$db = new Database(key1, key2, key3, key4);
+				$db = new Database(webhost, webusername, webpassword, mmbdatabase);
 				$db->connect();
 
 				$aResult['result'] = $db->getJobNames($cred);
@@ -569,7 +569,7 @@ if(!isset($aResult['error'])){
                                 echo $aResult['error'];
                         }
                         else {
-                                $db = new Database(key1, key2, key3, key4);
+                                $db = new Database(webhost, webusername, webpassword, mmbdatabase);
                                 $db->connect();
                                 $aResult['result'] = $db->getDistinctPdbIdsForProject($_POST['arguments'][0]);
                                 $db->disconnect();
@@ -589,7 +589,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key1, key2, key3, key4);
+				$db = new Database(webhost, webusername, webpassword, mmbdatabase);
 				$db->connect();
 				
 				$aResult['result'] = $db->getMutInfo($_POST['arguments'][0]);
@@ -611,7 +611,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key1, key2, key3, key4);
+				$db = new Database(webhost, webusername, webpassword, mmbdatabase);
 				$db->connect();
 				
 				$aResult['result'] = $db->getMutInfoFromProjectAndPdb($_POST['arguments'][0], $_POST['arguments'][1]);
@@ -633,7 +633,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key1, key2, key3, key4);
+				$db = new Database(webhost, webusername, webpassword, mmbdatabase);
 				$db->connect();
 				
 				$aResult['result'] = $db->getMutInfoFromHomologPdbAndComplex($_POST['arguments'][0], $_POST['arguments'][1], $_POST['arguments'][2]);
@@ -658,7 +658,7 @@ if(!isset($aResult['error'])){
                                 echo $aResult['error'];
                         }
                         else {
-                                $db = new Database(key1, key2, key3, key4);
+                                $db = new Database(webhost, webusername, webpassword, mmbdatabase);
                                 $db->connect();
                                 
                                 $aResult['result'] = $db->getComplexesFromPdb($_POST['arguments'][0]);
@@ -681,7 +681,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key1, key2, key3, key4);
+				$db = new Database(webhost, webusername, webpassword, mmbdatabase);
 				$db->connect();
 
 				$aResult['result'] = $db->getJobInfo($_POST['arguments'][0]);
@@ -702,7 +702,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 
 				$aResult['result'] = $db->getPurp();
@@ -758,7 +758,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key1, key2, key3, key4);
+				$db = new Database(webhost, webusername, webpassword, mmbdatabase);
 				$db->connect();
 
 				$aResult['result'] = $db->countAndFillSequenceTable($_POST['arguments'][0]);
@@ -782,7 +782,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key1, key2, key3, key4);
+				$db = new Database(webhost, webusername, webpassword, mmbdatabase);
 				$db->connect();
 
 				$aResult['result'] = $db->getPdbChains($_POST['arguments'][0]);
@@ -806,7 +806,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key1, key2, key3, key4);
+				$db = new Database(webhost, webusername, webpassword, mmbdatabase);
 				$db->connect();
 
 				//$aResult['result'] = $db->getPdbChains($_POST['arguments'][0]);
@@ -832,7 +832,7 @@ if(!isset($aResult['error'])){
                          echo $aResult['error'];
                     }
                     else {
-                        $db = new Database(key1, key2, key3, key4);
+                        $db = new Database(webhost, webusername, webpassword, mmbdatabase);
                         $db->connect();
                         //$aResult['result'] = $db->getPdbPrimary ($_POST['arguments'][0]);
                         if (sizeof($_POST['arguments']) == 1) {
@@ -858,7 +858,7 @@ if(!isset($aResult['error'])){
                     }
                     else {
                         error_log("getWildTypeAminoAcidType (".$_POST['arguments'][0]. $_POST['arguments'][1]. $_POST['arguments'][2].")\n", 3, "/var/log/apache2/error.log");
-                        $db = new Database(key1, key2, key3, key4);
+                        $db = new Database(webhost, webusername, webpassword, mmbdatabase);
                         $db->connect();
                         if (sizeof($_POST['arguments']) == 3) {
                             //$aResult['result'] = $db->getPdbResidueIds ($_POST['arguments'][0], $_POST['arguments'][1]);}
@@ -875,7 +875,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key1, key2, key3, key4);
+				$db = new Database(webhost, webusername, webpassword, mmbdatabase);
 				$db->connect();
 				$aResult['result'] = $db->getPdbChains($_POST['arguments'][0]);
 				$db->disconnect();
@@ -906,7 +906,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 
 				$aResult['result'] = $db->getMutString($_POST['arguments'][0]);
@@ -924,7 +924,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 
 				$aResult['result'] = $db->getWTString($_POST['arguments'][0]);
@@ -942,7 +942,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 
 				$aResult['result'] = $db->getProjectDir($_POST['arguments'][0]);
@@ -960,7 +960,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 
 				$aResult['result'] = $db->getStatus($_POST['arguments'][0]);
@@ -978,7 +978,7 @@ if(!isset($aResult['error'])){
 				echo $aResult['error'];
 			}
 			else {
-				$db = new Database(key9, key10, key11, key12);
+				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
 
 				$aResult['result'] = $db->getDDG($_POST['arguments'][0], $_POST['arguments'][0]);
