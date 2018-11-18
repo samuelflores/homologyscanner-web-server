@@ -84,7 +84,7 @@
 			debug: false,
 			color: "black",
 			addSelectionOptions: false,
-			serverURL: "http://ae15a.dyn.scilifelab.se/homologyScanner/jsmol.php",
+			serverURL: "http://pe1.scilifelab.se/jsmol.php",
 			//serverURL: "http://virtualchemistry.org/~mmb/jsmol.php",
 			use: "HTML5",
 			j2sPath: "j2s",
@@ -514,7 +514,7 @@
 				+'set errorCallback "errorCallback";'
 				+'set defaultloadscript "isDssp = false;set defaultVDW babel;if(!h2oOn){display !water}";'
 				+'set zoomlarge false;color echo orange;set echo top left;echo Loading ' + mutationsCB.value() + '...;refresh;'
-				+'load "http://ae15a.dyn.scilifelab.se/homologyScanner/temp/' + sID + '/XXXX.pdb";color echo orange;set echo top center;echo ' + mutationsCB.value() + ';'
+				+'load "http://pe1.scilifelab.se//temp/' + sID + '/XXXX.pdb";color echo orange;set echo top center;echo ' + mutationsCB.value() + ';'
 				+'spacefill off;wireframe off;cartoons on;color chain;'
                                 +selectionString
 			loadscript = loadscript.replace(/XXXX/g, xxxx)
