@@ -989,7 +989,7 @@ class Database
                 error_log($pdbId);
                 error_log($mutationStringPrimary);
                 error_log("check 5");
-                $query = "SELECT pdbPrimary,  submittedHomologs.pdbHomolog,submittedHomologs.complexPrimary,   submittedHomologs.complexHomolog,  submittedHomologs.mutationStringPrimary, mutationStringHomolog,  results.complexString, results.mutationString, results.wildTypeString , (foldx_energy - foldx_energy_wild_type) as DDGhomolog from submittedHomologs, results where pdbPrimary = ? and mutationStringPrimary = ? and submittedHomologs.complexPrimary = ? and results.jobName =? AND mutationStringHomolog = mutationString and results.pdbId = submittedHomologs.pdbHomolog  ;";
+                $query = "SELECT pdbPrimary,  submittedHomologs.pdbHomolog,submittedHomologs.complexPrimary,   submittedHomologs.complexHomolog,  submittedHomologs.mutationStringPrimary, mutationStringHomolog,  results.complexString, results.mutationString, results.wildTypeString , (foldx_energy - foldx_energy_wild_type) as DDGhomolog from submittedHomologs, results where pdbPrimary = ? and mutationStringPrimary = ? and submittedHomologs.complexPrimary = ? and results.jobName =? AND mutationStringHomolog = mutationString and results.pdbId = submittedHomologs.pdbHomolog and not ISNULL(foldx_energy) and not ISNULL(foldx_energy_wild_type) ;";
 
                 $this->gelstmt = $this->myconn->prepare($query);
                 $this->gelstmt->bind_param('ssss', $pdbId,$mutationStringPrimary,$complexStringPrimary, $jobName);
@@ -1024,7 +1024,7 @@ class Database
                 error_log($pdbHomolog);
                 error_log($mutationStringHomolog);
                 error_log("check 5");
-                $query = "SELECT pdbPrimary,  submittedHomologs.pdbHomolog,submittedHomologs.complexPrimary,   submittedHomologs.complexHomolog,  submittedHomologs.mutationStringPrimary, mutationStringHomolog,  results.complexString, results.mutationString, results.wildTypeString , (foldx_energy - foldx_energy_wild_type) as DDGhomolog from submittedHomologs, results where pdbPrimary = ? and mutationStringPrimary = ? and submittedHomologs.complexPrimary = ? and results.jobName =? AND mutationStringHomolog = mutationString and results.pdbId = submittedHomologs.pdbHomolog  ;";
+                $query = "SELECT pdbPrimary,  submittedHomologs.pdbHomolog,submittedHomologs.complexPrimary,   submittedHomologs.complexHomolog,  submittedHomologs.mutationStringPrimary, mutationStringHomolog,  results.complexString, results.mutationString, results.wildTypeString , (foldx_energy - foldx_energy_wild_type) as DDGhomolog from submittedHomologs, results where pdbPrimary = ? and mutationStringPrimary = ? and submittedHomologs.complexPrimary = ? and results.jobName =? AND mutationStringHomolog = mutationString and results.pdbId = submittedHomologs.pdbHomolog and not ISNULL(foldx_energy) and not ISNULL(foldx_energy_wild_type)  ;";
 
                 $this->gelstmt = $this->myconn->prepare($query);
                 $myPrimaryPdbId          = $this->getPrimaryPdbId($pdbHomolog , $complexHomolog);
@@ -1443,7 +1443,7 @@ class Database
 		}
                 $errorArray = array();
                 if ($numSequenceTableEntries == 0){
-                    exec(("export LD_LIBRARY_PATH=/usr/local/SimTK/lib:/usr/local/SimTK/lib64:/home/sam/svn/RNAToolbox/trunk/build/:/home/sam/svn/breeder/build ; /home/sam/svn/breeder/build/breeder   -PDBID " . $pdbId . "  -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD m1sQ1P@ssw0rd -USER root -SQLUSER root  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data//runs/homoScan.1/" . $pdbId . "/"), $errorArray);
+                    exec(("export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/home/sam/svn/breeder/build:/usr/local/MMB/lib  ; /home/sam/svn/breeder/build/breeder   -PDBID " . $pdbId . "  -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data//runs/homoScan.1/" . $pdbId . "/"), $errorArray);
                 } 
                 error_log("Check 32");
                 for ($i = (sizeof($errorArray) -10); $i < sizeof($errorArray); $i++){ 

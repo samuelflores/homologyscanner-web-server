@@ -6,7 +6,6 @@
 			<div id="submit-div" class="k-header">
 				<h2>New Job Submit Form</h2>
 				<div id="submitInfo-div">
-					<p>If you click the "Submit" button, the form-data will be sent to a page called "/action_page.php".</p>
 				</div>
 				<div id="submitForm-div">
 					<form method="POST" id="mainForm" name="mainForm" enctype="application/x-www-form-urlencoded" action="action_page.php">
@@ -32,6 +31,7 @@
 							</tr>
 						</table>
 						<br> 
+                                                <p id="serverMessage"></p>
 
 						<br>
 
@@ -147,11 +147,12 @@
                     console.log(this.status) ;
                 }
             }; 
-            xhttp.open("POST", "calls.php", true ); // Going with asynchronous as I don't want to move on until the chains are ready. Revisit this decision later.
+            xhttp.open("POST", "calls.php", false ); // Going with asynchronous as I don't want to move on until the chains are ready. Revisit this decision later.
             console.log(this.status) ;
             xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // this turns out to be crucial!
             console.log(document.getElementById("pdbId").value );
             // Argument is user-provided PDB ID:
+            // contains a system call to breeder:
             xhttp.send("restcall=getPdbChains&arguments[]=" + document.getElementById("pdbId").value ); // calls.php contains a SWITCH on 'restcall'
     }
 
@@ -171,6 +172,7 @@
                 document.pdbPrimaryArray = []; // make sure this array is empty
                 for (var i = 0; i< myTempPdbPrimaryArray.length; i++){
                     document.pdbPrimaryArray.push(myTempPdbPrimaryArray[i].pdbPrimary); // trying to make sure the array gets passed by value not reference
+                    //alert("Check 3.  document.pdbPrimaryArray.length = " + document.pdbPrimaryArray.length );
                     console.log(myTempPdbPrimaryArray[i]);
                 }
                 console.log(document.pdbPrimaryArray);
@@ -198,13 +200,24 @@
                     populateChainArrays();
                 } else if (document.pdbPrimaryArray.length == 0){
                     // There is no primaryPdb associated with the user-provided PDB ID. This is a completely new protein. Do nothing special.
-                    console.log("no pdbPrimary found for this PDB ID. This is a new PDB ID.");
-                    alert("Your specified PDB ID " + document.getElementById("pdbId").value + " is not a member of any existing family of homologous PDB IDs. This is evidently the first time this PDB ID is used. ");
+
+
+                    	
+/*
+
+       //             alert("Your specified PDB ID " + document.getElementById("pdbId").value + " is not a member of any existing family of homologous PDB IDs. This is evidently the first time this PDB ID is used. We will need to prepare the database for first time use of this PDB ID. This should take on the order of one minute, depending on protein size. Please do NOT reload or navigate away from this page!");
+     //               console.log("no pdbPrimary found for this PDB ID. This is a new PDB ID.");
+                    //setTimeout(populateChainArrays(),1000);
+   //                 populateChainArrays();
+ //                   alert("Done preparing the database for first time use with PDB ID " + document.getElementById("pdbId").value + "");
+*/
                 } else if (!(document.pdbPrimaryArray.find( checkPdbIdMatches ) === undefined )) { // If one of the elements of document.pdbPrimaryArray is  document.getElementById("pdbId")
                     if (document.pdbPrimaryArray.length >  1) {
-                        alert("Your specified PDB ID  is already the head of more than one existing family of homologous PDB IDs. This is good, let's keep this PDB ID for now. For your information, this pdbID is a member of families headed by : " + document.pdbPrimaryArray.join());
+                        //alert("Your specified PDB ID  is already the head of more than one existing family of homologous PDB IDs. This is good, let's keep this PDB ID for now. For your information, this pdbID is a member of families headed by : " + document.pdbPrimaryArray.join());
+                        document.getElementById("serverMessage").innerHTML = "Your specified PDB ID  is already the head of more than one existing family of homologous PDB IDs. This is good, let's keep this PDB ID for now. For your information, this pdbID is a member of families headed by : " + document.pdbPrimaryArray.join() + ". <br> You may now select the chains in complexes 1 and 2.";
                     } else {
-                        alert("Your specified PDB ID "+  document.getElementById("pdbId").value + "  is the head of exactly  one existing family of homologous PDB IDs. That means there are already submissions for at least one mutation of this complex. This is good, let's continue.");
+                        //alert("Your specified PDB ID "+  document.getElementById("pdbId").value + "  is the head of exactly  one existing family of homologous PDB IDs. That means there are already submissions for at least one mutation of this complex. This is good, let's continue.");
+                        document.getElementById("serverMessage").innerHTML = "Your specified PDB ID "+  document.getElementById("pdbId").value + "  is the head of exactly  one existing family of homologous PDB IDs. That means there are already submissions for at least one mutation of this complex. This is good, let's continue. <br>";// You may now select the chains in complexes 1 and 2.";
                     }
                     ////alert("Your specified PDB ID " + document.getElementById("pdbId") + " is already the head of at least one existing family of homologous PDB IDs. If at all possible we should try to do the calculations within the context of an existing family. The candidate families are headed by : " + document.pdbPrimaryArray.join());
                 } else {
@@ -235,7 +248,7 @@
             }
            console.log(document.getElementById("pdbId").value);
         }; 
-        xhttp.open("POST", "calls.php", true   ); // Going with asynchronous 
+        xhttp.open("POST", "calls.php", false   ); // Going with asynchronous 
         xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // this turns out to be crucial!
         // Argument is user-provided PDB ID:
         //xhttp.send("restcall=getPdbPrimary&arguments[]=" + document.getElementById("pdbId").value ); // calls.php contains a SWITCH on restcall
@@ -251,19 +264,65 @@
 
     }
 
+    function messagePatience(){
+        document.getElementById("serverMessage").innerHTML = "Please wait patiently!";
+    }
+
     function validatePdbAndPopulateChains(){
         var myChainIdArray = [];
+        if (document.allPdbChains === undefined) {
+            //alert("document.allPdbChains is undefined. Now initializing that as an empty array []");
+            console.log("document.allPdbChains is undefined. Now initializing that as an empty array []");
+            document.allPdbChains = [];}
+        //document.getElementById("serverMessage").innerHTML = "The chains have not yet been loaded..";
         if (!(validatePdbIdLength())) {
+            document.getElementById("serverMessage").innerHTML = "";
+            //document.pdbPrimaryArray = []; // Make sure arrays populated from prior visits to page are cleaned out
+            document.allPdbChains = []; // Make sure arrays populated from prior visits to page are cleaned out
             return false; // First make sure the length is right
-        } else {
+        } else  {   
+            //document.getElementById("serverMessage").innerHTML = "Please wait patiently!";
             document.getElementById("pdbId").value = (document.getElementById("pdbId").value).toUpperCase() ; // we standardize to uppercase PDB IDs throughout this server.
             document.pdbPrimaryArray = []; // casting these as arrays
+            //alert("About to call populatePdbPrimaryArray(). Currently document.pdbPrimaryArray.length = " + document.pdbPrimaryArray.length );
             populatePdbPrimaryArray();
+            //alert("Done with populatePdbPrimaryArray(). Currently document.pdbPrimaryArray.length = " + document.pdbPrimaryArray.length );
                 // moved this up to populatePdbPrimaryArray()     , so it onlky happens after we are done with document.pdbPrimaryArray .
             console.log("Detected that your PDB ID is valid. You may now add chains.");
-            populateChainArrays();
-        }
-    }
+            //alert("document.pdbPrimaryArray.length : " + document.pdbPrimaryArray.length);
+            if ((document.pdbPrimaryArray.length == 0) && (document.allPdbChains.length == 0)) {
+            //if (document.allPdbChains.length == 0)        	
+                var txt;
+                var r = confirm("Your specified PDB ID " + document.getElementById("pdbId").value + " has not been submitted to us before. We will need to prepare the database for first time use of this PDB ID. This could take on the order of one minute, depending on protein size. Please do NOT reload or navigate away from this page, even if your browser claims it is unresponsive! Can you wait this long?");
+                if (r == true) {
+                    //var myWindow = window.open("http://pe1.scilifelab.se/patiencePdb.php", "MsgWindow", "width=800,height=400");
+                    //myWindow.document.write("<p> Your specified PDB ID has not been submitted to us before. We will need to prepare the database for first time use.  This should take on the order of one minute, depending on protein size. This window will close when that is done. Please wait patiently!</p>");
+
+                    populateChainArrays();
+                    //myWindow.close(); 
+                    alert("Database has now been prepared for first time use with PDB ID " + document.getElementById("pdbId").value + "");
+                    document.getElementById("serverMessage").innerHTML += "Ready to pick chains!";
+                } else {
+                    txt = "You pressed Cancel!";
+                    document.getElementById("pdbId").value = "";
+                    document.getElementById("serverMessage").innerHTML = "";
+                    //document.getElementById("serverMessage").hide();
+                    ////document.getElementById("serverMessage").show();
+                } // of else (meaning r == false)
+            } // of if (document.pdbPrimaryArray.length == 0)    
+            else if (document.allPdbChains.length == 0){
+                alert("We will now load the sequence table for your specified PDB ID " + document.getElementById("pdbId").value + ". This has been submitted to us before, so it should only take a brief moment. ");
+                populateChainArrays();
+                //myWindow.close(); 
+                //alert("Database has now been prepared for first time use with PDB ID " + document.getElementById("pdbId").value + "");
+                document.getElementById("serverMessage").innerHTML += "Ready to pick chains!";
+            }
+            else {
+                document.getElementById("serverMessage").innerHTML += "Ready to pick chains!";
+                //document.getElementById("serverMessage").innerHTML = "Ready!";
+            }
+        } // of else (meaning validatePdbIdLength() == true)
+    } // of function validatePdbAndPopulateChains()
 
     function validatePdbIdLength(){
         var pdbIdElement = document.getElementById("pdbId"); 
@@ -398,6 +457,8 @@
         }
 
     function addChainRow( numComplex ){
+
+        document.getElementById("serverMessage").innerHTML = "Now select or change the chain for complex " + numComplex + " from the drop down list. You are also allowed to remove chains, or (if enough remain available) add further chains.";
         document.getElementById("pdbId").readonly = true;
         console.log(document.allPdbChains.length -1);
         document.getElementById("deleteChain" + numComplex + "Button").disabled = false; 

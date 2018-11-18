@@ -17,7 +17,7 @@
  */
 
 
-set_include_path(__DIR__ . '/../contents/phpseclib0.3.10/');
+set_include_path( 'phpseclib0.3.10/');
 require_once('Crypt/RSA.php');
 require_once('Net/SSH2.php');
 require_once('Net/SCP.php');
