@@ -18,7 +18,6 @@
 <table>
 <?php 
 
-
     foreach ($_POST as $key => $value) {
         echo "<tr>";
         echo "<td>";
@@ -55,13 +54,13 @@
 -->
 <?php
 include ( 'generalConfig.php');
-$myLibPath = "/usr/lib/x86_64-linux-gnu/blas:/home/sam/svn/breeder/build:/usr/local/lib";
+//$myLibPath = "/usr/lib/x86_64-linux-gnu/blas:/home/sam/svn/breeder/build:/usr/local/lib";
 $userMailAddress = $_POST["user_email"];
 $commandString = "";
 $commandString = "cd /data/runs/" . $_POST["jobName"] . "/" . $_POST["pdbId"] . " ; ";
-#$commandString .= "/usr/local/bin/hs-homologyScanner -FASTAEXECUTABLE /usr/local/fasta_lwp/fasta.pl  -FASTATEMPDIRECTORY /usr/local//fasta_lwp///temp/ -BREEDEREXECUTABLE /usr/local/bin/breeder -BREEDERMAINDIRECTORY //svn/breeder -DATABASE mmb -MMBEXECUTABLE /usr/local/bin/MMB -LASTSTAGE 1 -FOLDXSCRIPT //svn/breeder/perl/run-foldx.3.pl -FOLDXEXECUTABLE //usr/local//foldx/foldx -SQLSERVER pe1.scilifelab.se -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi -JOBLIBRARYPATH $myLibPath -REPORTINGINTERVAL 0.000001 -NUMREPORTINGINTERVALS 2 -FLEXIBILITYWINDOWOFFSET 2 -TEMPERATURE 298 -ID "
 # Went back to installed homologyScanner:
-$commandString = "/usr/local/bin/homologyScanner    -FASTAEXECUTABLE /usr/local//fasta_lwp/fasta.pl -FASTATEMPDIRECTORY /usr/local//fasta_lwp///temp/ -BREEDEREXECUTABLE /usr/local/bin/breeder -BREEDERMAINDIRECTORY /home/sam/svn/breeder -DATABASE mmb -MMBEXECUTABLE /usr/local/bin/MMB -LASTSTAGE 1 -FOLDXSCRIPT /home/sam/svn/breeder/perl/run-foldx.3.pl -FOLDXEXECUTABLE //usr/local//foldx/foldx -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi -JOBLIBRARYPATH $myLibPath -REPORTINGINTERVAL 0.000001 -NUMREPORTINGINTERVALS 2 -FLEXIBILITYWINDOWOFFSET 2 -TEMPERATURE 298 -ID "
+$commandString = "/usr/local/bin/homologyScanner    -FASTAEXECUTABLE /usr/local//fasta_lwp/fasta.pl -FASTATEMPDIRECTORY /usr/local//fasta_lwp///temp/ -BREEDEREXECUTABLE /usr/local/bin/breeder -BREEDERMAINDIRECTORY /home/sam/svn/breeder -DATABASE mmb -MMBEXECUTABLE /usr/local/bin/MMB -LASTSTAGE 1 -FOLDXSCRIPT /home/sam/svn/breeder/perl/run-foldx.3.pl -FOLDXEXECUTABLE //usr/local//foldx/foldx -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD $webpassword -USER root -SQLUSER mmbcgi -JOBLIBRARYPATH $myLibPath -REPORTINGINTERVAL 0.000001 -NUMREPORTINGINTERVALS 2 -FLEXIBILITYWINDOWOFFSET 2 -TEMPERATURE 298 -ID "
+//$commandString = "/usr/local/bin/homologyScanner    -FASTAEXECUTABLE /usr/local//fasta_lwp/fasta.pl -FASTATEMPDIRECTORY /usr/local//fasta_lwp///temp/ -BREEDEREXECUTABLE /usr/local/bin/breeder -BREEDERMAINDIRECTORY /home/sam/svn/breeder -DATABASE mmb -MMBEXECUTABLE /usr/local/bin/MMB -LASTSTAGE 1 -FOLDXSCRIPT /home/sam/svn/breeder/perl/run-foldx.3.pl -FOLDXEXECUTABLE //usr/local//foldx/foldx -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD $webpassword -USER root -SQLUSER mmbcgi -JOBLIBRARYPATH $myLibPath -REPORTINGINTERVAL 0.000001 -NUMREPORTINGINTERVALS 2 -FLEXIBILITYWINDOWOFFSET 2 -TEMPERATURE 298 -ID "
 . $_POST["jobName"]
 . " -EMAILADDRESS "
 . $userMailAddress  
