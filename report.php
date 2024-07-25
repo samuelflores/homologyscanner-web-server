@@ -103,10 +103,28 @@
 				<table id="resultsTable" name="resultsTable" style=""></table>
 				</br>
 				<table id="averageDDG"   name="averageDDG"   style=""></table>
+                                <p>Reload this page to update.</p>
 				<p>You can view the mutated structure for each of the above. Click the "Tool" tab on the homologyScanner server, select the PDB ID, complex, and mutation (using the renumbered mutation string above). Then click the "Load structure" button.</p>
 				<p>Mutation strings on this server follow the format: C-NNNI-S.c-nnni-s, where e.g. C,c are chain ID's, NNN and nnn are residue numbers, I and i are insertion codes (if any), and S and s are the mutant residue type in single letter code.  These can be concatenated with '.', for as many as four simultaneous substitutions.</p>
 				<p>Click <b><a href="index.php">here</a></b> to be redirected back to our site.</p>
 			</div>
+                        <div id="report_page-queue">
+                                <h3>Job Queue</h3>
+                                <?php
+                                    echo("\n");
+                                    $slurmOutputFileName = "/var/www/html/temp/slurmOutput.txt";
+                                    $lastLine = system("squeue --format='%6i %9P %30j %8u %2t %6M %R' --sort='i' > $slurmOutputFileName",$returnValue);
+                                    //$lastLine = system("squeue > /var/www/html/temp/slurmOutput.txt",$returnValue);
+                                    $slurmOutputFileContents = file_get_contents($slurmOutputFileName); 
+				?>
+                                <textarea name="slurmOutputTextArea" id="slurmOutputTextAreaId" rows="10" cols="80" style="font-family:monospace;"   text-align: justify; white-space: normal;> <?php echo $slurmOutputFileContents; ?> </textarea> 
+                                <table id="numQueued"   name="numQueued" style=""></table>
+                                </br>    
+                                <table id="numCompletedSuccessfully"   name="numCompletedSuccessfully"   style=""></table>
+                                </br>
+                                <table id="numDied"   name="numDied"   style=""></table>
+                                <p>The homologyScanner web server uses SLURM to manage jobs. Some points to note follow. First, there may be many more jobs than you would have expected. Queued jobs have not yet gone through the sequence identity of structural similarity tests; these weed out a lot of jobs. Second, if the running jobs are not yours you will need to wait a bit. homologyScanner is reasonably fast so you should not have to wait excessively long. Third, if the queue is empty, that means all submitted jobs have been processed. If the results table is still empty, there may be a problem with your job or the server, and you should contact the administrator.  </p>
+                        </div>
 		</div>
 	</div>
 <?php
@@ -125,8 +143,18 @@
     var complexString = "<?php echo $_GET['complexString'] ?>";
     var jobName = "<?php echo $_GET['jobName'] ?>";
     populateResultsTable(pdbId , mutationString, complexString, jobName); 
+    populateQueueTable(pdbId , mutationString, complexString, jobName); 
     //populateResultsTable("1A22"  , "A-174-A", "A,B", "homoScan.1");
 
+    function populateQueueTable( $pdbId ,  $mutationStringPrimary, $complexStringPrimary, $jobName){
+        var mySlurmOutputTextArea = document.getElementById("slurmOutputTextArea");
+        var slurmOutputFileName = "/var/www/html/temp/slurmOutput.txt";
+        
+        //$lastLine = system("squeue > /var/www/html/temp/slurmOutput.txt",$returnValue);
+        //$slurmOutputFileContents = file_get_contents(slurmOutputFileName); 
+        //mySlurmOutputTextArea.value= $slurmOutputFileContents;     
+
+    }
     function populateResultsTable( $pdbId ,  $mutationStringPrimary, $complexStringPrimary, $jobName){
         var myTable = document.getElementById("resultsTable");
             var xhttp = new XMLHttpRequest(); // May need variant to handle old IE browsers https://www.w3schools.com/js/js_ajax_http.asp
@@ -155,6 +183,8 @@
                         //myCell.innerHTML = myResultsArray[i].DDGhomolog;             
                         myCell.innerHTML = myResultsArray[i].DDGhomolog.toFixed(3);             
                         myCell = myRow.insertCell(0);
+                        myCell.innerHTML = myResultsArray[i].pdbNumberedMutationString;
+                        myCell = myRow.insertCell(0);
                         myCell.innerHTML = myResultsArray[i].mutationStringHomolog;
                         myCell = myRow.insertCell(0);
                         myCell.innerHTML = myResultsArray[i].complexHomolog; 
@@ -168,6 +198,8 @@
 		    var myRow = myTable.insertRow(0); 
 		    var myCell = myRow.insertCell(0);
 		    myCell.innerHTML = "FoldX ΔΔG <br>(kcal/mol)"
+		    var myCell = myRow.insertCell(0);
+		    myCell.innerHTML = "Mutation <br>(PDB numbering)"
 		    var myCell = myRow.insertCell(0);
 		    myCell.innerHTML = "Mutation <br>(renumbered residues)"
 		    var myCell = myRow.insertCell(0);
@@ -258,6 +290,24 @@
 		}
 		
 		#resultsTable td {
+			border: 1px solid white;
+			padding: 0 5px;
+		}
+		
+		td {
+			font-weight: bold;
+		}
+		
+		.ctxt {
+			color: #F4AF03;
+			text-align: center;
+		}
+		#queueTable{
+			border: 1px solid white;
+			text-align: center;
+		}
+		
+		#queueTable td {
 			border: 1px solid white;
 			padding: 0 5px;
 		}

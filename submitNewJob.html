@@ -100,7 +100,9 @@
     function populateRemainingPdbChains(){
         console.log("check 27.0");
         if (!(document.allPdbChains.length > 1)) { 
-           alert("Error! Not enough chains found!"); 
+           alert("Error 1. Not enough chains found! We cannot accept PDB ID " + document.getElementById("pdbId").value + ". Exiting now. Come back later with a valid PDB ID. "); 
+           //document.getElementById("pdbId").value = "";
+           location.reload();
         }
         document.remainingPdbChains = document.allPdbChains.slice(); // the slice() method ensures that we copy the array by value rather than by reference. https://stackoverflow.com/questions/7486085/copying-array-by-value-in-javascript
         for (var h = 1; h < 3; h++){
@@ -130,6 +132,10 @@
             xhttp.onreadystatechange = function() {
                 if (this.readyState == 4 && this.status == 200) {
                     console.log(JSON.parse(this.responseText)) ;
+                    console.log("this.responseText ",(this.responseText)) ;
+                    console.log("this.readyState ",(this.readyState)) ;
+                    console.log("this ",(this)) ;
+                    console.log("check populateChainArrays 1 ");
                     var myTempChainIdArray = JSON.parse(this.responseText);
                     var myChainIdArray = []; // casting these as arrays
                     document.allPdbChains = []; // casting these as arrays
@@ -157,6 +163,7 @@
     }
 
     function populatePdbPrimaryArray(complex1, complex2){
+        console.log("check populatePdbPrimaryArray 1");
         if (complex1 === undefined) {
             complex1 = "";
         } 
@@ -166,16 +173,15 @@
         var myPdbIdArray = [];
         var xhttp = new XMLHttpRequest(); 
         xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-                console.log(JSON.parse(this.responseText)) ;
+            if (this.readyState == 4 && this.status == 200) {
+                console.log("JSON.parse(this.responseText",JSON.parse(this.responseText)) ;
                 var myTempPdbPrimaryArray = JSON.parse(this.responseText);
                 document.pdbPrimaryArray = []; // make sure this array is empty
                 for (var i = 0; i< myTempPdbPrimaryArray.length; i++){
                     document.pdbPrimaryArray.push(myTempPdbPrimaryArray[i].pdbPrimary); // trying to make sure the array gets passed by value not reference
-                    //alert("Check 3.  document.pdbPrimaryArray.length = " + document.pdbPrimaryArray.length );
                     console.log(myTempPdbPrimaryArray[i]);
                 }
-                console.log(document.pdbPrimaryArray);
+                console.log("document.pdbPrimaryArray = ",document.pdbPrimaryArray);
                 console.log(document.pdbPrimaryArray.join());
                 // moved this up from validatePdbAndPopulateChains, so it onlky happens after we are done with document.pdbPrimaryArray .
                 document.getElementById("pdbId").readOnly = true ;
@@ -199,18 +205,11 @@
                     deleteSubstitutionRow();
                     populateChainArrays();
                 } else if (document.pdbPrimaryArray.length == 0){
+                    console.log("check 25.5");
                     // There is no primaryPdb associated with the user-provided PDB ID. This is a completely new protein. Do nothing special.
 
 
                     	
-/*
-
-       //             alert("Your specified PDB ID " + document.getElementById("pdbId").value + " is not a member of any existing family of homologous PDB IDs. This is evidently the first time this PDB ID is used. We will need to prepare the database for first time use of this PDB ID. This should take on the order of one minute, depending on protein size. Please do NOT reload or navigate away from this page!");
-     //               console.log("no pdbPrimary found for this PDB ID. This is a new PDB ID.");
-                    //setTimeout(populateChainArrays(),1000);
-   //                 populateChainArrays();
- //                   alert("Done preparing the database for first time use with PDB ID " + document.getElementById("pdbId").value + "");
-*/
                 } else if (!(document.pdbPrimaryArray.find( checkPdbIdMatches ) === undefined )) { // If one of the elements of document.pdbPrimaryArray is  document.getElementById("pdbId")
                     if (document.pdbPrimaryArray.length >  1) {
                         //alert("Your specified PDB ID  is already the head of more than one existing family of homologous PDB IDs. This is good, let's keep this PDB ID for now. For your information, this pdbID is a member of families headed by : " + document.pdbPrimaryArray.join());
@@ -240,27 +239,32 @@
 
                 }
 
-
-
-
            } else {
                 console.log(this.status) ;
-            }
+           }
+           console.log("check 26.0");
            console.log(document.getElementById("pdbId").value);
         }; 
-        xhttp.open("POST", "calls.php", false   ); // Going with asynchronous 
-        xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // this turns out to be crucial!
-        // Argument is user-provided PDB ID:
-        //xhttp.send("restcall=getPdbPrimary&arguments[]=" + document.getElementById("pdbId").value ); // calls.php contains a SWITCH on restcall
-        if ((complex1 == "") && (complex2 == ""))
-            xhttp.send("restcall=getPdbPrimary&arguments[]=" + document.getElementById("pdbId").value ); // calls.php contains a SWITCH on restcall
-        else if  ((complex1 == "") || (complex2 == "")) {alert("One of your complexes is empty!"); return;}
-        else {
-            var myQuery = "restcall=getPdbPrimary&arguments[0]=" + document.getElementById("pdbId").value +"&arguments[1]=" + complex1 + "&arguments[2]=" + complex2;   
-            console.log(myQuery);
-            xhttp.send(myQuery);
-            //xhttp.send("restcall=getPdbPrimary&arguments[]=" + document.getElementById("pdbId").value +"&" + complex1 + "&" + complex2); 
-        }
+
+        //if (!(document.allPdbChains.length > 1)) { 
+        //    alert("Error! Not enough chains found! We cannot accept PDB ID " + document.getElementById("pdbId").value + ". "); 
+            //document.getElementById("pdbId").value = "";
+        // } 
+        //else {
+            xhttp.open("POST", "calls.php", false   ); // Going with asynchronous 
+            xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // this turns out to be crucial!
+            // Argument is user-provided PDB ID:
+            //xhttp.send("restcall=getPdbPrimary&arguments[]=" + document.getElementById("pdbId").value ); // calls.php contains a SWITCH on restcall
+            if ((complex1 == "") && (complex2 == ""))
+                xhttp.send("restcall=getPdbPrimary&arguments[]=" + document.getElementById("pdbId").value ); // calls.php contains a SWITCH on restcall
+            else if  ((complex1 == "") || (complex2 == "")) {alert("One of your complexes is empty!"); return;}
+            else {
+                var myQuery = "restcall=getPdbPrimary&arguments[0]=" + document.getElementById("pdbId").value +"&arguments[1]=" + complex1 + "&arguments[2]=" + complex2;   
+                console.log(myQuery);
+                xhttp.send(myQuery);
+                //xhttp.send("restcall=getPdbPrimary&arguments[]=" + document.getElementById("pdbId").value +"&" + complex1 + "&" + complex2); 
+            }
+        //}
 
     }
 
@@ -284,21 +288,22 @@
             //document.getElementById("serverMessage").innerHTML = "Please wait patiently!";
             document.getElementById("pdbId").value = (document.getElementById("pdbId").value).toUpperCase() ; // we standardize to uppercase PDB IDs throughout this server.
             document.pdbPrimaryArray = []; // casting these as arrays
-            //alert("About to call populatePdbPrimaryArray(). Currently document.pdbPrimaryArray.length = " + document.pdbPrimaryArray.length );
+            console.log("About to call populatePdbPrimaryArray(). Currently document.pdbPrimaryArray.length = " + document.pdbPrimaryArray.length );
             populatePdbPrimaryArray();
-            //alert("Done with populatePdbPrimaryArray(). Currently document.pdbPrimaryArray.length = " + document.pdbPrimaryArray.length );
-                // moved this up to populatePdbPrimaryArray()     , so it onlky happens after we are done with document.pdbPrimaryArray .
             console.log("Detected that your PDB ID is valid. You may now add chains.");
-            //alert("document.pdbPrimaryArray.length : " + document.pdbPrimaryArray.length);
+            console.log("document.pdbPrimaryArray.length : " + document.pdbPrimaryArray.length);
+            console.log("document.allPdbChains.length    : " +document.allPdbChains.length    );
             if ((document.pdbPrimaryArray.length == 0) && (document.allPdbChains.length == 0)) {
-            //if (document.allPdbChains.length == 0)        	
+                console.log("check validatePdbAndPopulateChains 1");
                 var txt;
                 var r = confirm("Your specified PDB ID " + document.getElementById("pdbId").value + " has not been submitted to us before. We will need to prepare the database for first time use of this PDB ID. This could take on the order of one minute, depending on protein size. Please do NOT reload or navigate away from this page, even if your browser claims it is unresponsive! Can you wait this long?");
                 if (r == true) {
                     //var myWindow = window.open("http://pe1.scilifelab.se/patiencePdb.php", "MsgWindow", "width=800,height=400");
                     //myWindow.document.write("<p> Your specified PDB ID has not been submitted to us before. We will need to prepare the database for first time use.  This should take on the order of one minute, depending on protein size. This window will close when that is done. Please wait patiently!</p>");
 
+                    console.log("check validatePdbAndPopulateChains 2");
                     populateChainArrays();
+                    console.log("check validatePdbAndPopulateChains 2.1");
                     //myWindow.close(); 
                     alert("Database has now been prepared for first time use with PDB ID " + document.getElementById("pdbId").value + "");
                     document.getElementById("serverMessage").innerHTML += "Ready to pick chains!";
@@ -311,6 +316,7 @@
                 } // of else (meaning r == false)
             } // of if (document.pdbPrimaryArray.length == 0)    
             else if (document.allPdbChains.length == 0){
+                console.log("check validatePdbAndPopulateChains 2");
                 alert("We will now load the sequence table for your specified PDB ID " + document.getElementById("pdbId").value + ". This has been submitted to us before, so it should only take a brief moment. ");
                 populateChainArrays();
                 //myWindow.close(); 
@@ -318,6 +324,7 @@
                 document.getElementById("serverMessage").innerHTML += "Ready to pick chains!";
             }
             else {
+                console.log("check validatePdbAndPopulateChains 3");
                 document.getElementById("serverMessage").innerHTML += "Ready to pick chains!";
                 //document.getElementById("serverMessage").innerHTML = "Ready!";
             }
@@ -665,7 +672,8 @@
         }
     }
     function addSubstitutionRow(){
-        document.getElementById("submit-btn").disabled = true; // We enable the Submit button only after the user selects a substitution
+        //document.getElementById("submit-btn").disabled = true; // We enable the Submit button only after the user selects a substitution
+        document.getElementById("submit-btn").disabled = false;// Turned out to be problematic to disable Submit here. When the substitiuion row is added it is populated with reasonable chain ID, residue, and substitution. So no disaster if user does not change these.
         var complex1 = "";
         var complex2 = "";
         for (var i = 0; i < document.getElementById("chains1Table").rows.length; i++) complex1 += document.getElementById("chains1Table").rows[i].cells[0].childNodes[0].value;
@@ -800,7 +808,7 @@
         
         function populatemySubstitutedResidueTypeSelector(){
             
-            var aminoAcidTypes = ["?","A","R","N","D","C","E","Q","G","H","I","L","K","M","F","P","S","T","W","Y","V"];
+            var aminoAcidTypes = ["A","R","N","D","C","E","Q","G","H","I","L","K","M","F","P","S","T","W","Y","V"];
             for (var i = 0; i < aminoAcidTypes.length ; i++){
                 var mySubstitutedResidueTypeOption = document.createElement("option");
                 mySubstitutedResidueTypeOption.value = aminoAcidTypes[i];
@@ -818,7 +826,7 @@
         console.log(myResidueNumberSelector.value);
         mySubstitutedResidueTypeSelector.onfocus = function(){repopulateSubstitutedAminoAcidTypeOptions(mySubstitutedResidueTypeSelector.parentNode.parentNode.rowIndex);}
         mySubstitutedResidueTypeSelector.onchange= function(){
-            document.getElementById("submit-btn").disabled = false; // We enable the Submit button only after the user selects a substitution
+            document.getElementById("submit-btn").disabled = false; // We enable the Submit button only after the user selects a substitution. Actually now they do not actually have to change the substitution, it defaults to "A"
         }
 
         // If we reached the maximum number of rows, disable the add mutation button
@@ -831,50 +839,6 @@
 
 
 function repopulateSubstitutedAminoAcidTypeOptions(rowIndex){
-//function repopulateSubstitutedAminoAcidTypeOptions(localSubstitutedResidueTypeSelector, pdbId, chainId, residueId){
-    /*
-    var mySubstitutionTable = document.getElementById("substitutionTable");
-    var pdbId = "1AXI"; //document.getElementById("pdbId").value;
-    var localSubstitutedResidueTypeSelector =  mySubstitutionTable.rows[ rowIndex ].cells[2].childNodes[0];
-    //var rowIndex = localSubstitutedResidueTypeSelector.parentNode.parentNode.rowIndex;
-    //console.log(localSubstitutedResidueTypeSelector, pdbId, chainId, residueId);
-    var aminoAcidTypes = ["?","A","R","N","D","C","E","Q","G","H","I","L","K","M","F","P","S","T","W","Y","V"];
-            var chainId   = mySubstitutionTable.rows[ rowIndex ].cells[0].childNodes[0].value;
-            console.log(chainId);
-            var residueId = mySubstitutionTable.rows[ rowIndex ].cells[1].childNodes[0].value;
-            console.log(residueId);
-    var xhttp = new XMLHttpRequest(); 
-
-    xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-            console.log((this.responseText)) ;
-            console.log(JSON.parse(this.responseText)) ;
-            var myTempAminoAcidTypeArray = JSON.parse(this.responseText);
-            //return (myTempAminoAcidTypeArray[0].aminoAcidType);
-          while (localSubstitutedResidueTypeSelector.hasChildNodes()) {
-              localSubstitutedResidueTypeSelector.removeChild(node.lastChild);
-          }
-            for (var i = 0; i < aminoAcidTypes.length ; i++){ 
-                if (myTempAminoAcidTypeArray[0].aminoAcidType != aminoAcidTypes[i]) {
-                    var mySubstitutedResidueTypeOption = document.createElement("option");
-                    mySubstitutedResidueTypeOption.value = aminoAcidTypes[i];
-                    mySubstitutedResidueTypeOption.innerHTML = aminoAcidTypes[i]; 
-                    localSubstitutedResidueTypeSelector.appendChild(mySubstitutedResidueTypeOption);
-                }
-            };
-        } else {
-            console.log(this.status) ;
-            console.log(this.readystate) ;
-            console.log((this.responseText)) ;
-        }
-    }
-    xhttp.open("POST", "calls.php", true );
-    xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // this turns out to be crucial!
-    var callString ="restcall=getPdbChains&arguments[0]=" + pdbId ; // + "&arguments[1]=" + chainId + "&arguments[2]=" + residueId;
-    //var callString ="restcall=getWildTypeAminoAcidType&arguments[0]=" + pdbId + "&arguments[1]=" + chainId + "&arguments[2]=" + residueId;
-    console.log(callString);
-    xhttp.send("callString");
-    */
 
 
 
@@ -890,7 +854,7 @@ function repopulateSubstitutedAminoAcidTypeOptions(rowIndex){
 		    while (localSubstitutedResidueTypeSelector.hasChildNodes()) {
 		        localSubstitutedResidueTypeSelector.removeChild(localSubstitutedResidueTypeSelector.childNodes[0]);
 		    }
-                    var aminoAcidTypes = ["?","A","R","N","D","C","E","Q","G","H","I","L","K","M","F","P","S","T","W","Y","V"];
+                    var aminoAcidTypes = ["A","R","N","D","C","E","Q","G","H","I","L","K","M","F","P","S","T","W","Y","V"];
                     for (var i = 0; i< aminoAcidTypes.length; i++){
                         console.log(myWildTypeResidueType[0].aminoAcidType);  
                         console.log(aminoAcidTypes[i]);  

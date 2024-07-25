@@ -15,8 +15,13 @@
 				</p>
 				<h3><u>What is homologyScanner</u></h3>
 				<p class="text">
-					homologyScanner improves on the precision of a FoldX (Guerois et al., JMB 2002) prediction of change in protein-protein binding energy upon mutation. It does this by finding additional coordinate sets in the Protein Data Bank, and repeating the calculation. You are only required to provide a PDB ID, specify which chains are relevant, which chains belong to subunit 1 vs subunit 2, and what mutation you wish to make. homologyScanner finds all structures which have the chains you requested, with similar tertiary and quaternary structure. It then translates your mutation to the numbering system of all such structures found, and repeats the binding calculation. Averaging over all these calculations leads to an improvement in precision. Read about it in the upcoming Flores et al. paper, in 2018 or (worst case) 2019. For more information please visit the About page.
+					homologyScanner improves on the precision of a FoldX (Guerois et al., JMB 2002) prediction of change in protein-protein binding energy upon mutation. It does this by finding additional coordinate sets in the Protein Data Bank, and repeating the calculation. You are only required to provide a PDB ID, specify which chains are relevant, which chains belong to subunit 1 vs subunit 2, and what mutation you wish to make. homologyScanner finds all structures which have the chains you requested, with similar tertiary and quaternary structure. It then translates your mutation to the numbering system of all such structures found, and repeats the binding calculation. Averaging over all these calculations leads to an improvement in precision. Read about it in the upcoming Flores et al. paper, in 2019. For more information please visit the About page.
 				</p>
+                                <h3><u>Submit</u></h3>
+				<p class="text">
+Click on this tab if you want to submit a new job. You will be asked for a PDB ID, the chains forming one subunit in the interaction of interest, and     the chains forming the "other" subunit. Lastly you will be asked what substitutions you  propose to make (up to four simultaneous substitutions). You will get an email as soon as the server     starts calculations, and a second when your job is done. Run times are quite variable, some jobs are done in less than one hour. However if your job is exceptionally heavy it will be cut off     after some time limit, currently 70 hours.
+				</p>
+
 				<h3><u>Projects and mutations</u></h3>
 				<p class="text">
 					In the Tool page, select a project and then a specific mutation. You can also use both scrollbars for searching a specific project or mutation. When the mutation has been selected press “load” to get the structure.

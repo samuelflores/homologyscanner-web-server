@@ -55,10 +55,16 @@
 -->
 <?php
 include ( 'generalConfig.php');
-$myLibPath = "/usr/lib/x86_64-linux-gnu/blas:/home/sam/svn/breeder/build:/usr/local/MMB/lib";
+$myLibPath = "/usr/lib/x86_64-linux-gnu/blas:/home/sam/svn/breeder/build:/usr/local/lib";
+$userMailAddress = $_POST["user_email"];
 $commandString = "";
-$commandString = "/usr/local/MMB/bin/homologyScanner -FASTAEXECUTABLE /usr/local//fasta_lwp/fasta_lwp.pl -FASTATEMPDIRECTORY /usr/local//fasta_lwp///temp/ -BREEDEREXECUTABLE /usr/local/MMB/bin/breeder -BREEDERMAINDIRECTORY /home/sam/svn/breeder -DATABASE mmb -MMBEXECUTABLE /usr/local/MMB/bin/MMB -LASTSTAGE 1 -FOLDXSCRIPT /usr/local/MMB/bin/run-foldx.3.pl -FOLDXEXECUTABLE //usr/local//foldx/foldx -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi -JOBLIBRARYPATH $myLibPath -REPORTINGINTERVAL 0.000001 -NUMREPORTINGINTERVALS 2 -FLEXIBILITYWINDOWOFFSET 2 -TEMPERATURE 298 -ID "
+$commandString = "cd /data/runs/" . $_POST["jobName"] . "/" . $_POST["pdbId"] . " ; ";
+#$commandString .= "/usr/local/bin/hs-homologyScanner -FASTAEXECUTABLE /usr/local/fasta_lwp/fasta.pl  -FASTATEMPDIRECTORY /usr/local//fasta_lwp///temp/ -BREEDEREXECUTABLE /usr/local/bin/breeder -BREEDERMAINDIRECTORY //svn/breeder -DATABASE mmb -MMBEXECUTABLE /usr/local/bin/MMB -LASTSTAGE 1 -FOLDXSCRIPT //svn/breeder/perl/run-foldx.3.pl -FOLDXEXECUTABLE //usr/local//foldx/foldx -SQLSERVER pe1.scilifelab.se -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi -JOBLIBRARYPATH $myLibPath -REPORTINGINTERVAL 0.000001 -NUMREPORTINGINTERVALS 2 -FLEXIBILITYWINDOWOFFSET 2 -TEMPERATURE 298 -ID "
+# Went back to installed homologyScanner:
+$commandString = "/usr/local/bin/homologyScanner    -FASTAEXECUTABLE /usr/local//fasta_lwp/fasta.pl -FASTATEMPDIRECTORY /usr/local//fasta_lwp///temp/ -BREEDEREXECUTABLE /usr/local/bin/breeder -BREEDERMAINDIRECTORY /home/sam/svn/breeder -DATABASE mmb -MMBEXECUTABLE /usr/local/bin/MMB -LASTSTAGE 1 -FOLDXSCRIPT /home/sam/svn/breeder/perl/run-foldx.3.pl -FOLDXEXECUTABLE //usr/local//foldx/foldx -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi -JOBLIBRARYPATH $myLibPath -REPORTINGINTERVAL 0.000001 -NUMREPORTINGINTERVALS 2 -FLEXIBILITYWINDOWOFFSET 2 -TEMPERATURE 298 -ID "
 . $_POST["jobName"]
+. " -EMAILADDRESS "
+. $userMailAddress  
 . " -ONEMUTANT ";
 
 $mutationString = "";
@@ -76,39 +82,52 @@ while ($_POST[$myChain])
     $mySubstituedResidueType = "substitutedResidueType" . $i;
 }
 $commandString .= $mutationString;
-$commandString .= " -WORKINGDIRECTORY /data//runs/" . $_POST["jobName"] . "/" . $_POST["pdbId"];
+# switched back to explicit working directory, rather than "."
+$commandString .= " -WORKINGDIRECTORY /data/runs/" . $_POST["jobName"] . "/" . $_POST["pdbId"];
+# We are cd'ing to the working directory, so just use "."
+#$commandString .= " -WORKINGDIRECTORY .     " ;#. $_POST["jobName"] . "/" . $_POST["pdbId"];
+# We are now cd'ing into our working directory, so we just say "/work" . This because we are mounting to the docker container and it is simpler to just use the current directory rather than specify it explicitly. I tried "./", but this gives us problems when we cd into a directory and then try to give it a file name with the full path.
+#$commandString .= " -WORKINGDIRECTORY /work " ;#. $_POST["jobName"] . "/" . $_POST["pdbId"];
 $commandString .= "  -CHAINSINCOMPLEX ";
 
-$complexString = "";
+$complexStringForward = "";
+$complexStringBackward = ",";
 
 $i = 0;
 $myComplex1Chain = "complex1ChainSelector" . $i;
 while ($_POST[$myComplex1Chain]) {
     $myComplex1Chain = "complex1ChainSelector" . $i;
     //$commandString .= $_POST[$myComplex1Chain];     
-    $complexString .= $_POST[$myComplex1Chain];     
+    $complexStringForward .= $_POST[$myComplex1Chain];     
+    $complexStringBackward .= $_POST[$myComplex1Chain];     
     $i++;
     $myComplex1Chain = "complex1ChainSelector" . $i;
 }
     
-$complexString .= ",";
+$complexStringForward .= ",";
 //$commandString .= ",";
 $i = 0;
+$temp = "";
 $myComplex2Chain = "complex2ChainSelector" . $i;
 while ($_POST[$myComplex2Chain]) {
     $myComplex2Chain = "complex2ChainSelector" . $i;
     //$commandString .= $_POST[$myComplex2Chain];
-    $complexString .= $_POST[$myComplex2Chain];
+    $complexStringForward .= $_POST[$myComplex2Chain];
+    $temp .= $_POST[$myComplex2Chain];
     $i++;
     $myComplex2Chain = "complex2ChainSelector" . $i;
 }
+$complexStringBackward = $temp.$complexStringBackward;
 
-$commandString .= $complexString;
+$complexStringBackward = 
+
+$commandString .= $complexStringForward;
 $commandString .= " ";              
 
 $jobCreateTime =  time();
+mkdir("/data/runs/" .  $_POST["jobName"] . "/" . $_POST["pdbId"] ); // For new PDBs, this step is necessary.
 $homoScanJobFileNamePartial =  $_POST["jobName"] . "/" . $_POST["pdbId"] . "/" . $mutationString ."." . $jobCreateTime . ".job";
-$homoScanJobFileName = "/data//runs/" . $homoScanJobFileNamePartial;
+$homoScanJobFileName = "/data/runs/" . $homoScanJobFileNamePartial;
 //echo "\n $homoScanJobFileName <br> \n";
 
 $homoScanJobHandle = fopen($homoScanJobFileName, 'w') or die('Cannot open file:  '.$homoScanJobFileName); //implicitly creates file
@@ -132,15 +151,15 @@ $headerString = <<<EOD
 #SBATCH --cpus-per-task=1
 #SBATCH -N 1                 
 #SBATCH -n 1                
+#SBATCH --oversubscribe     
 #SBATCH -o $jobLogFile.%j.slurm.out 
 # This file generated by __FILE__
 
 export LD_LIBRARY_PATH=$myLibPath;
 
 EOD;
-#"xdd/usr/lib/x86_64-linux-gnu/blas:/home/sam/svn/breeder/build:/usr/local/MMB/lib
+#"xdd/usr/lib/x86_64-linux-gnu/blas:/home/sam/svn/breeder/build:/usr/local/lib
 $administratorEmail = administratorEmail;
-$userMailAddress = $_POST["user_email"];
 #.",".$administratorEmail;
 #$userMailAddress = $_POST["user_email,samuel.flores@scilifelab.se"];
 //mail -s "Your job  $mutationString" $userMailAddress
@@ -154,7 +173,8 @@ Thank you for using the homologyScanner web server. Your job has been started. I
 
 Bye
 EOD;
-$jobStartMailCommandString = "echo \" $jobStartMailContents \" | /usr/bin/mail -s \"Your job  $mutationString has been STARTED\" $userMailAddress,$administratorEmail \n";
+$jobStartMailCommandString = "/usr/bin/sendemail -m \" $jobStartMailContents \"  -u \"Your job  $mutationString has been STARTED\" -t $userMailAddress,$administratorEmail -f sam@pe1.scilifelab.se \n";
+//$jobStartMailCommandString = "echo \" $jobStartMailContents \" | /usr/bin/mail -s \"Your job  $mutationString has been STARTED\" $userMailAddress,$administratorEmail \n";
 
 /*
 If the run was successful, you can examine your results at http://pe1.scilifelab.se/homologyScanner/index.php . Go to the "Tool" tab. You should select :
@@ -173,27 +193,61 @@ Dear User,
 
 Thank you for using the homologyScanner web server. Your contribution not only provides you with the DDG for your protein of choice, it also provides you with the PDB IDs of structurally related and possibly useful complexes, and lastly translates your mutation to the numbering system of those other complexes. 
 
-If you are getting this message, your job has completed. 
+If you are getting this message, your job is in process. Some number of potential homologs have been detected, and all possibilities have been queued for investigation.
 
-You can see a synopsis table of all results at:
+Any useful homologs are then used for a FoldX calculation. As these complete, they are added to the synopsis table, which you can find here: 
 
-http://pe1.scilifelab.se/report.php?jobName=$myJobName&pdbId=$myPdbId&mutationString=$mutationString&complexString=$complexString
+http://pe1.scilifelab.se/report.php?jobName=$myJobName&pdbId=$myPdbId&mutationString=$mutationString&complexString=$complexStringForward
+
+No need to check that quite yet -- but if your job returns results you will get an Update email, and then the table will show resuts.
 
 If there were any problems, ask us to look at the log file, $jobLogFilePartial .
 
 In addition to the utility to you, your submission is a service to the community. The DDG is computed only once, so other users interested in this mutation will be able to access the result without waiting. If this is the first time this family of proteins has been submitted, then the search for structural homologs, which costs some compute time, will be done and not be repeated for future users.  Also by specifying the chains in each of the two parts of your complex, you are telling the community how you think this complex comes together. They don't have to agree, and can make a different choice, of course. But we may choose to automatically compute other mutations in this interface on an automated basis, at some future time.
 
+Please do not reply to this email.
+
 
 Bye
 EOD;
-$mailCommandString = "echo \" $mailContents \" | /usr/bin/mail -s \"Your job  $mutationString is COMPLETED\" $userMailAddress,$administratorEmail \n";
+$jobEndMailContents = <<<EOD
+Dear User,
+
+Thank you for using the homologyScanner web server. Your contribution not only provides you with the DDG for your protein of choice, it also provides you with the PDB IDs of structurally related and possibly useful complexes, and lastly translates your mutation to the numbering system of those other complexes. 
+
+If you are getting this message, all detected homologs have been submitted for investigation, and DDG calculations have been queued, performed, or attempted for all that fulfilled the similarity criteria. Ho
+    wever some or all results may still be pending.
+
+There are two ways to view the results. You can check the synopsis table,  here: 
+
+http://pe1.scilifelab.se/report.php?jobName=$myJobName&pdbId=$myPdbId&mutationString=$mutationString&complexString=$complexStringForward
+
+You can also click the "View" tab, then select your submitted PDB ID, chains in complex, and mutation string. The "View" tool will give you not only the DDGs but also the mutant structure as generated by FoldX.
+
+If there were any problems, ask us to look at the log file, $jobLogFilePartial .
+
+In addition to the utility to you, your submission is a service to the community. The DDG is computed only once, so other users interested in this mutation will be able to access the result without waiting. If this is the first time this family of proteins has been submitted, then the search for structural homologs, which costs some compute time, will be done and not be repeated for future users.  Also by specifying the chains in each of the two parts of your complex, you are telling the community how you think this complex comes together. They don't have to agree, and can make a different choice, of course. But we may choose to automatically compute other mutations in this interface on an automated basis, at some future time.
+
+Please do not reply to this email.
+
+
+Bye
+EOD;
+#//$mailCommandString = "echo \" $mailContents \" | /usr/bin/mail -s \"Your job  $mutationString is IN PROCESS\" $userMailAddress,$administratorEmail \n";
+$jobStartMailCommandString = "/usr/bin/sendemail -m \"$mailContents\" -u \"Your job  $mutationString is IN PROCESS \"   -t $userMailAddress,$administratorEmail -f sam@pe1.scilifelab.se \n";
+$jobEndMailCommandString = "/usr/bin/sendemail -m \"$jobEndMailContents\" -u \"Your job  $mutationString has progressed  \"   -t $userMailAddress,$administratorEmail -f sam@pe1.scilifelab.se \n";
 
 fwrite($homoScanJobHandle, $headerString);
 fwrite($homoScanJobHandle, $jobStartMailCommandString );
 fwrite($homoScanJobHandle, "\n");
+#fwrite($homoScanJobHandle, $commandString);
+fwrite($homoScanJobHandle, "\n");
+# Running the command a total of 3 times, so we can recover from 3 stalled runs:
+#fwrite($homoScanJobHandle, $commandString);
+fwrite($homoScanJobHandle, "\n");
 fwrite($homoScanJobHandle, $commandString);
 fwrite($homoScanJobHandle, "\n");
-fwrite($homoScanJobHandle, $mailCommandString );
+fwrite($homoScanJobHandle, $jobEndMailCommandString );
 fwrite($homoScanJobHandle, "\n");
 
 #system ($commandString);
@@ -201,7 +255,7 @@ fclose($homoScanJobHandle);
 //system ("echo \"<br> /usr/bin/sbatch  $homoScanJobFileName ... <br>\"" );
 //system ("echo \"hellowww                             \" &> /data/runs/homoScan.1/1A22/temp.txt" );
 system ("touch                                             /data/runs/homoScan.1/1A22/temp.txt" );
-$result_msg = "Dear User, </br>You have requested <b>PDB ID : <span class='ctxt'>$myPdbId</span></b> , <b>complex : <span class='ctxt'>$complexString</span></b> , <b>mutation (in PDB numbering) : <span class='ctxt'>$mutationString</span></b> . <br><br> A job file has been created called: <b>$homoScanJobFileNamePartial</b> . A log will be written to: <b>$jobLogFilePartial</b> . You will be emailed at <b>$userMailAddress</b> when your job is done. This email will also go to the administrator, $administratorEmail.</br>";
+$result_msg = "Dear User, </br>You have requested <b>PDB ID : <span class='ctxt'>$myPdbId</span></b> , <b>complex : <span class='ctxt'>$complexStringForward</span></b> , <b>mutation (in PDB numbering) : <span class='ctxt'>$mutationString</span></b> . <br><br> A job file has been created called: <b>$homoScanJobFileNamePartial</b> . A log will be written to: <b>$jobLogFilePartial</b> . You will be emailed at <b>$userMailAddress</b> when your job is done. This email will also go to the administrator, $administratorEmail.</br>";
 
 ?>
 	<div id="home-mid">

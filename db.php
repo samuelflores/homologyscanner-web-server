@@ -952,6 +952,7 @@ class Database
                 error_log($complexHomolog);
                 error_log("check 19.1");
 		$mutString = $this->getMutStringFromHomologPdbAndComplex($jobName,$pdbHomolog,$complexHomolog);
+		$pdbNumberedMutString = $this->getPdbNumberedMutStringFromHomologPdbAndComplex($jobName,$pdbHomolog,$complexHomolog);
 		$wtString  = $this->getWTStringFromHomologPdbAndComplex ($jobName,$pdbHomolog,$complexHomolog);
 		$status    = $this->getStatusFromHomologPdbAndComplex   ($jobName,$pdbHomolog,$complexHomolog);
 	        $pdbId     = $this->getPdbIdFromHomologPdbAndComplex    ($jobName,$pdbHomolog,$complexHomolog);	
@@ -964,6 +965,7 @@ class Database
 		foreach($mutString as $key => $value){
 			$mutInfo[$i]['mutationString'] = $value;
                         error_log($value      );
+			$mutInfo[$i]['pdbNumberedMutationString'] = $pdbNumberedMutString[$key];
 			$mutInfo[$i]['WTString'] = $wtString[$key];
 			$mutInfo[$i]['status'] = $status[$key];
 			$mutInfo[$i]['ddg'] = $this->getDDG($jobName, $value);
@@ -984,12 +986,46 @@ class Database
          * @param string $pdbId, string $mutationStringPrimary, string $complexStringPrimary, string $jobName
          * @returns array
 	 */
+        public function getSlurmTable($pdbId,$mutationStringPrimary,$complexStringPrimary , $jobName){
+                error_log("check 10");
+                error_log($pdbId);
+                error_log($mutationStringPrimary);
+                error_log("check 15");
+                $query = "use slurm_acct_db; SELECT pdbPrimary,  submittedHomologs.pdbHomolog,submittedHomologs.complexPrimary,   submittedHomologs.complexHomolog,  submittedHomologs.mutationStringPrimary, mutationStringHomolog,  results.complexString, results.mutationString, results.wildTypeString , (foldx_energy - foldx_energy_wild_type) as DDGhomolog from pe1_job_table ; use mmb;";
+
+                $this->gelstmt = $this->myconn->prepare($query);
+                $this->gelstmt->bind_param('ssss', $pdbId,$mutationStringPrimary,$complexStringPrimary, $jobName);
+		    //$this->gelstmt->execute();
+
+		    $this->gelstmt->execute();
+
+                $res = $this->gelstmt->get_result();
+                $info = array();
+
+                while($row = $res->fetch_array(MYSQLI_ASSOC)) {
+                        error_log("check 5.5");
+                        error_log(json_encode($row));
+                        error_log("check 5.6");
+                        array_push($info, $row);
+                }
+                $this->gelstmt->close();
+                error_log("check 5.7");
+                error_log(json_encode($info));
+                return $info;
+        }
+	/**
+	 * This function gets all results so they can be presented to the user or compiled 
+	 * to report a final DDG. 
+	 * Returns a 2D array with all results for this job.              
+         * @param string $pdbId, string $mutationStringPrimary, string $complexStringPrimary, string $jobName
+         * @returns array
+	 */
         public function getSynopsisTable($pdbId,$mutationStringPrimary,$complexStringPrimary , $jobName){
                 error_log("check 4");
                 error_log($pdbId);
                 error_log($mutationStringPrimary);
                 error_log("check 5");
-                $query = "SELECT pdbPrimary,  submittedHomologs.pdbHomolog,submittedHomologs.complexPrimary,   submittedHomologs.complexHomolog,  submittedHomologs.mutationStringPrimary, mutationStringHomolog,  results.complexString, results.mutationString, results.wildTypeString , (foldx_energy - foldx_energy_wild_type) as DDGhomolog from submittedHomologs, results where pdbPrimary = ? and mutationStringPrimary = ? and submittedHomologs.complexPrimary = ? and results.jobName =? AND mutationStringHomolog = mutationString and results.pdbId = submittedHomologs.pdbHomolog and not ISNULL(foldx_energy) and not ISNULL(foldx_energy_wild_type) ;";
+                $query = "SELECT pdbPrimary,  submittedHomologs.pdbHomolog,submittedHomologs.complexPrimary,   submittedHomologs.complexHomolog,  submittedHomologs.mutationStringPrimary, mutationStringHomolog,  results.complexString, results.mutationString, results.pdbNumberedMutationString as pdbNumberedMutationString,  results.wildTypeString , (foldx_energy - foldx_energy_wild_type) as DDGhomolog from submittedHomologs, results where pdbPrimary = ? and mutationStringPrimary = ? and submittedHomologs.complexPrimary = ? and results.jobName =? AND mutationStringHomolog = mutationString and results.pdbId = submittedHomologs.pdbHomolog and not ISNULL(foldx_energy) and not ISNULL(foldx_energy_wild_type) ;";
 
                 $this->gelstmt = $this->myconn->prepare($query);
                 $this->gelstmt->bind_param('ssss', $pdbId,$mutationStringPrimary,$complexStringPrimary, $jobName);
@@ -1024,7 +1060,7 @@ class Database
                 error_log($pdbHomolog);
                 error_log($mutationStringHomolog);
                 error_log("check 5");
-                $query = "SELECT pdbPrimary,  submittedHomologs.pdbHomolog,submittedHomologs.complexPrimary,   submittedHomologs.complexHomolog,  submittedHomologs.mutationStringPrimary, mutationStringHomolog,  results.complexString, results.mutationString, results.wildTypeString , (foldx_energy - foldx_energy_wild_type) as DDGhomolog from submittedHomologs, results where pdbPrimary = ? and mutationStringPrimary = ? and submittedHomologs.complexPrimary = ? and results.jobName =? AND mutationStringHomolog = mutationString and results.pdbId = submittedHomologs.pdbHomolog and not ISNULL(foldx_energy) and not ISNULL(foldx_energy_wild_type)  ;";
+                $query = "SELECT pdbPrimary,  submittedHomologs.pdbHomolog,submittedHomologs.complexPrimary,   submittedHomologs.complexHomolog,  submittedHomologs.mutationStringPrimary, mutationStringHomolog,  results.complexString, results.mutationString, results.pdbNumberedMutationString as pdbNumberedMutationString, results.wildTypeString , (foldx_energy - foldx_energy_wild_type) as DDGhomolog from submittedHomologs, results where pdbPrimary = ? and mutationStringPrimary = ? and submittedHomologs.complexPrimary = ? and results.jobName =? AND mutationStringHomolog = mutationString and results.pdbId = submittedHomologs.pdbHomolog and not ISNULL(foldx_energy) and not ISNULL(foldx_energy_wild_type)  ;";
 
                 $this->gelstmt = $this->myconn->prepare($query);
                 $myPrimaryPdbId          = $this->getPrimaryPdbId($pdbHomolog , $complexHomolog);
@@ -1155,6 +1191,26 @@ class Database
 	}
 	private function getMutStringFromHomologPdbAndComplex($jobName,$pdbHomolog,$complexHomolog){
 		$query = "SELECT mutationString FROM results WHERE jobName = ? AND pdbId = ? and complexString = ?  order by mutationString asc";
+                error_log("check 15.1");
+                error_log($query);
+		$this->stmt = $this->myconn->prepare($query);
+		$this->stmt->bind_param('sss',$jobName, $pdbHomolog, $complexHomolog);
+		$this->stmt->execute();
+		$this->stmt->bind_result($mutationString);
+		
+		$mutationStringArray = array();
+		
+		while ($this->stmt->fetch()) {
+                        error_log("check 15.3");
+			$mutationStringArray[] = $mutationString;
+                        error_log($mutationString);
+		}
+		$this->stmt->close();
+                error_log("check 15.5");
+		return $mutationStringArray;
+	}
+	private function getPdbNumberedMutStringFromHomologPdbAndComplex($jobName,$pdbHomolog,$complexHomolog){
+		$query = "SELECT pdbNumberedMutationString FROM results WHERE jobName = ? AND pdbId = ? and complexString = ?  order by mutationString asc";
                 error_log("check 15.1");
                 error_log($query);
 		$this->stmt = $this->myconn->prepare($query);
@@ -1426,6 +1482,8 @@ class Database
 
 	public function countAndFillSequenceTable($pdbId){
 		$query="SELECT count(*) as numEntries  FROM sequence where pdbId = ?" ;
+                error_log($query);
+                // On this system, error_log writes to /var/log/apache2/error.log
 		$this->stmt = $this->myconn->prepare($query);
 		$this->stmt->bind_param('s', $pdbId  );
 		$this->stmt->execute();
@@ -1443,13 +1501,37 @@ class Database
 		}
                 $errorArray = array();
                 if ($numSequenceTableEntries == 0){
-                    exec(("export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/home/sam/svn/breeder/build:/usr/local/MMB/lib  ; /home/sam/svn/breeder/build/breeder   -PDBID " . $pdbId . "  -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data//runs/homoScan.1/" . $pdbId . "/"), $errorArray);
+                    //exec(("export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/usr/local/MMB/lib  ; /usr/local/MMB/bin/breeder   -PDBID " . $pdbId . "  -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data//runs/homoScan.1/" . $pdbId . "/"), $errorArray);
+                    //error_log("About to issue:");
+                    //error_log("
+                    console.log("export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/usr/local/MMB/lib  ; /usr/local/bin/breeder   -PDBID " . $pdbId . "  -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data/runs/homoScan.1/" . $pdbId . "/  -ID /homoScan.1   -BREEDERMAINDIRECTORY  /home/sam/svn/breeder  -FOLDXSCRIPT /home/sam/svn/breeder/perl//run-foldx.3.pl -FOLDXEXECUTABLE /usr/local/foldx/foldx -MMBEXECUTABLE /usr/local//bin/MMB -TEMPERATURE 273  -CHAINSINCOMPLEX X,X &> /data/runs/homoScan.1/db.php.log");
+                    //exec("echo \'export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/usr/local/MMB/lib  ; /usr/local/bin/breeder   -PDBID " . $pdbId . "  -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data/runs/homoScan.1/" . $pdbId . "/  -ID /homoScan.1   -BREEDERMAINDIRECTORY  /home/sam/svn/breeder  -FOLDXSCRIPT /home/sam/svn/breeder/perl//run-foldx.3.pl -FOLDXEXECUTABLE /usr/local/foldx/foldx -MMBEXECUTABLE /usr/local//bin/MMB -TEMPERATURE 273  -CHAINSINCOMPLEX X,X\' &> /data/runs/homoScan.1/db.php.log");
+                    // Old way, before I made homologyScanner able to fill in the sequence table and quit:
+                    //exec(("export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/usr/local//lib  ; /usr/local/bin/breeder   -PDBID " . $pdbId . "  -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data/runs/homoScan.1/" . $pdbId . "/  -ID /homoScan.1   -BREEDERMAINDIRECTORY  /home/sam/svn/breeder  -FOLDXSCRIPT /home/sam/svn/breeder/perl//run-foldx.3.pl -FOLDXEXECUTABLE /usr/local/foldx/foldx -MMBEXECUTABLE /usr/local//bin/MMB -TEMPERATURE 273  -CHAINSINCOMPLEX X,X &> /data/runs/homoScan.1/db.php.log" ), $errorArray);
+                    exec(("export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/usr/local//lib  ;  /usr/local/bin/homologyScanner  -PDBID ". $pdbId . " -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data/runs/homoScan.1/". $pdbId . " -FASTAEXECUTABLE /usr/local//fasta_lwp/fasta_lwp.pl -BREEDEREXECUTABLE /usr/local/bin/breeder -FASTATEMPDIRECTORY /usr/local//fasta_lwp///temp/  &> /data/runs/homoScan.1/db.php.log" ), $errorArray);
+
+                    // Note: turns out the above is out of date. breeder now requires many more parameters. The following worked for instance:
+                    // sudo export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/usr/local/MMB/lib  ;  /usr/local/MMB/bin/breeder   -PDBID +FF0 -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE  /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data//runs/homoScan.1/+FF0 -ID /homoScan.1   -BREEDERMAINDIRECTORY  /home/sam/svn/breeder  -FOLDXSCRIPT /usr/local/MMB/bin/run-foldx.3.pl -FOLDXEXECUTABLE //usr/local//foldx/foldx -MMBEXECUTABLE /usr/local/MMB/bin/MMB -TEMPERATURE 273  -CHAINSINCOMPLEX A,A
+                    // Now need to update $numSequenceTableEntries
+                    $numSequenceTableEntries = 0; // Just being paranoid
+		    $this->stmt->execute();
+		    $res = $this->stmt->get_result();
+		    $chains = array();
+		    while($row = $res->fetch_array(MYSQLI_ASSOC)) {
+			array_push($chains, $row);
+                        error_log("Number of sequence table entries:" . $row['numEntries']);
+                        error_log($row['numEntries']);
+                        $numSequenceTableEntries = $row['numEntries'];
+                        error_log($numSequenceTableEntries);
+                        
+		    }
                 } 
-                error_log("Check 32");
+                error_log("Check 32.00");
                 for ($i = (sizeof($errorArray) -10); $i < sizeof($errorArray); $i++){ 
                     error_log($errorArray[$i]);
                 }
 		$this->stmt->close();
+                error_log("32.10 Returning: ". $numSequenceTableEntries);
 		return $numSequenceTableEntries;
 	}
 

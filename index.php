@@ -34,7 +34,7 @@ require_once('session.php');
 				</div>
 			</li>
 			<li>Home</li>
-			<li>Tool</li>
+			<li>View</li>
 			<li>Submit</li>
 			<li>About</li>
 			<div id="loginForm-div">

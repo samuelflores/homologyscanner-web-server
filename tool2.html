@@ -19,7 +19,7 @@
 			<div id="mInfo">
 				<ol class="mut-name-value">
 					<li>                    
-						<label for="WTString">Wild Type</label>
+						<label for="WTString">Wild Type (renumbered)</label>
 						<span id="WTString"></span>
 					</li>
 					<li>
@@ -68,7 +68,7 @@
 		<button class="k-button" id="eval-save-btn">Save</button>
 	</div>
 	<script>
-		var myJmol, loadscript, projectsCB, pdbIdsCB, mutationsCB, evalDD;
+		var myJmol, loadscript, projectsCB, pdbIdsCB, mutationsCB,   evalDD;
 		
 		win = $("#evalWindow");
 
@@ -115,7 +115,7 @@
 
 				{ type: "separator" },
 				{
-					template: "<span><label>Mutation (renumbered):</label><input id='mutationSelect' style='width: 100px;' /></span>",
+					template: "<span><label>Mutation (PDB numbering):</label><input id='mutationSelect' style='width: 100px;' /></span>",
 					overflow: "never"
 				},
 				{ type: "separator" },
@@ -187,6 +187,8 @@
 				myCell = myRow.insertCell(0);
 				myCell.innerHTML = myResultsArray[i].DDGhomolog.toFixed(3);             
 				myCell = myRow.insertCell(0);
+				myCell.innerHTML = myResultsArray[i].pdbNumberedMutationString;         
+				myCell = myRow.insertCell(0);
 				myCell.innerHTML = myResultsArray[i].mutationStringHomolog;
 				myCell = myRow.insertCell(0);
 				myCell.innerHTML = myResultsArray[i].pdbHomolog; 
@@ -196,6 +198,8 @@
 			    var myCell = myRow.insertCell(0);
 			    myCell.innerHTML = "FoldX ΔΔG <br>(kcal/mol)"
 			    var myCell = myRow.insertCell(0);
+			    myCell.innerHTML = "mutation <br>(PDB numbering)"
+			    var myCell = myRow.insertCell(0);
 			    myCell.innerHTML = "mutation <br>(renumbered residues)"
 			    var myCell = myRow.insertCell(0);
 			    myCell.innerHTML = "PDB ID" ;               
@@ -203,6 +207,8 @@
                             var myCell = myRow.insertCell(0);
                             //myCell.color = #F4AF03;
                             myCell.innerHTML = "<font color=#F4AF03><big> " + averageDDG.toFixed(3) + "</big></font>";// averageDDG.toFixed(3);
+                            var myCell = myRow.insertCell(0);
+                            myCell.innerHTML = ""                    
                             var myCell = myRow.insertCell(0);
                             myCell.innerHTML = ""                    
                             var myCell = myRow.insertCell(0);
@@ -220,7 +226,8 @@
                     console.log("check 3.5");                           
                     console.log(mutIndex);
                     console.log(mutationsCB.dataItem(mutIndex).pdbId);
-                    var mutationString = (mutationsCB.dataItem(mutIndex).mutationString);
+                    var mutationString            = (mutationsCB.dataItem(mutIndex).mutationString);
+                    var pdbNumberedMutationString = (mutationsCB.dataItem(mutIndex).pdbNumberedMutationString);
                     console.log(mutationsCB.dataItem(mutIndex).mutationString);
                     console.log("check 3.6");                           
                     console.log(mutationString);
@@ -402,7 +409,7 @@
 
 
 		$("#mutationSelect").kendoComboBox({
-			dataTextField: "mutationString",
+			dataTextField: "pdbNumberedMutationString",
 			dataValueField: "mutationString",
 			placeholder: "Mutation...",
 			filter: "contains",
@@ -514,7 +521,7 @@
 				+'set errorCallback "errorCallback";'
 				+'set defaultloadscript "isDssp = false;set defaultVDW babel;if(!h2oOn){display !water}";'
 				+'set zoomlarge false;color echo orange;set echo top left;echo Loading ' + mutationsCB.value() + '...;refresh;'
-				+'load "http://pe1.scilifelab.se//temp/' + sID + '/XXXX.pdb";color echo orange;set echo top center;echo ' + mutationsCB.value() + ';'
+				+'load "http://pe1.scilifelab.se//temp/' + sID + '/XXXX.pdb";color echo orange;set echo top center;echo ' + mutationsCB.value() + ' (renumbered residues);'
 				+'spacefill off;wireframe off;cartoons on;color chain;'
                                 +selectionString
 			loadscript = loadscript.replace(/XXXX/g, xxxx)
@@ -639,8 +646,8 @@
 			position: absolute;
 			top: 80px;
 			left: 0;
-			width: 250px;
-			margin-left: -252px;
+			width: 350px;
+			margin-left: -352px;
 			border: solid #171E28;
 			border-width: 1px 1px 0px 0;
 			background-color: #212A33;
@@ -651,7 +658,7 @@
 		#slide-in-handle {
 			position: absolute;
 			top: calc(50% - 26px);
-			left: 250px;
+			left: 350px;
 			width: 14px;
 			height: 40px;
 			background-color: #212A33;
