@@ -1,14 +1,8 @@
 <?php
 //include (__DIR__ . '/../contents/types.php');
+//include ('generalConfig.php'); // This is web accessible so includes safe config parameters. In particular it defines coderootdirectory, which containts dtypes.php, which in turn contains less safe config info.
+//include ($coderootdirectory.'/dtypes.php');
 
-
-/* the below seems redundant, also done in ../contents/dtypes.php */ 
-include ( 'dtypes.php');
-
-//$host="localhost";
-//$username="mmbcgi";
-//$password="mMBc9IU5@r";
-//$database="lims_project";
 $host=webhost;       
 $username=webusername  ;
 $password=webpassword;    
