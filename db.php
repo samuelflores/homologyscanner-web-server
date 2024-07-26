@@ -1,6 +1,6 @@
 
-
 <?php
+//include("connect.php");
 
 /** 
  * This class provides functionality for database connection
@@ -9,7 +9,7 @@
  * mysqli Prepared Statements:
  * @link http://php.net/manual/en/mysqli.quickstart.prepared-statements.php
  *
- * @param string $host, string $user, string $password, string $db_name
+ * @param string $host, string $user, string $password, string $db_name ..provided as parameters e.g. in the constructor at runtime. See e.g. calls.php
  * @author Anastasios Glaros
  * @version v1.0, 2015-3-10
  */
@@ -260,7 +260,10 @@ class Database
 
 		$query = "SELECT email FROM reg_user WHERE email = ? AND passwd = ?";
 		$this->loginstmt = $this->myconn->prepare($query);
-		$this->loginstmt->bind_param('ss', $email, md5($password));
+                //error_log("check 30");
+                //error_log("check 30: passing password => >$password<");
+                $myLocalUserPasswordInHash = md5($password);  // php was seeing the return value of md5 as a non-variable.
+		$this->loginstmt->bind_param('ss', $email, ($myLocalUserPasswordInHash));
 		$this->loginstmt->execute();
 		$this->loginstmt->store_result();
 
@@ -1480,7 +1483,7 @@ class Database
 
 	/* --- TABLE 'sequence' OPERATIONS [start] --- */
 
-	public function countAndFillSequenceTable($pdbId){
+	public function countAndFillSequenceTable($pdbId,$password){
 		$query="SELECT count(*) as numEntries  FROM sequence where pdbId = ?" ;
                 error_log($query);
                 // On this system, error_log writes to /var/log/apache2/error.log
@@ -1501,17 +1504,11 @@ class Database
 		}
                 $errorArray = array();
                 if ($numSequenceTableEntries == 0){
-                    //exec(("export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/usr/local/MMB/lib  ; /usr/local/MMB/bin/breeder   -PDBID " . $pdbId . "  -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data//runs/homoScan.1/" . $pdbId . "/"), $errorArray);
                     //error_log("About to issue:");
                     //error_log("
-                    console.log("export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/usr/local/MMB/lib  ; /usr/local/bin/breeder   -PDBID " . $pdbId . "  -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data/runs/homoScan.1/" . $pdbId . "/  -ID /homoScan.1   -BREEDERMAINDIRECTORY  /home/sam/svn/breeder  -FOLDXSCRIPT /home/sam/svn/breeder/perl//run-foldx.3.pl -FOLDXEXECUTABLE /usr/local/foldx/foldx -MMBEXECUTABLE /usr/local//bin/MMB -TEMPERATURE 273  -CHAINSINCOMPLEX X,X &> /data/runs/homoScan.1/db.php.log");
-                    //exec("echo \'export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/usr/local/MMB/lib  ; /usr/local/bin/breeder   -PDBID " . $pdbId . "  -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data/runs/homoScan.1/" . $pdbId . "/  -ID /homoScan.1   -BREEDERMAINDIRECTORY  /home/sam/svn/breeder  -FOLDXSCRIPT /home/sam/svn/breeder/perl//run-foldx.3.pl -FOLDXEXECUTABLE /usr/local/foldx/foldx -MMBEXECUTABLE /usr/local//bin/MMB -TEMPERATURE 273  -CHAINSINCOMPLEX X,X\' &> /data/runs/homoScan.1/db.php.log");
-                    // Old way, before I made homologyScanner able to fill in the sequence table and quit:
-                    //exec(("export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/usr/local//lib  ; /usr/local/bin/breeder   -PDBID " . $pdbId . "  -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data/runs/homoScan.1/" . $pdbId . "/  -ID /homoScan.1   -BREEDERMAINDIRECTORY  /home/sam/svn/breeder  -FOLDXSCRIPT /home/sam/svn/breeder/perl//run-foldx.3.pl -FOLDXEXECUTABLE /usr/local/foldx/foldx -MMBEXECUTABLE /usr/local//bin/MMB -TEMPERATURE 273  -CHAINSINCOMPLEX X,X &> /data/runs/homoScan.1/db.php.log" ), $errorArray);
-                    exec(("export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/usr/local//lib  ;  /usr/local/bin/homologyScanner  -PDBID ". $pdbId . " -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data/runs/homoScan.1/". $pdbId . " -FASTAEXECUTABLE /usr/local//fasta_lwp/fasta_lwp.pl -BREEDEREXECUTABLE /usr/local/bin/breeder -FASTATEMPDIRECTORY /usr/local//fasta_lwp///temp/  &> /data/runs/homoScan.1/db.php.log" ), $errorArray);
+                    //replace with:
+                    exec(("export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/usr/local//lib  ;  /usr/local/bin/homologyScanner  -PDBID ". $pdbId . " -SEQUENCE -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD ".$password." -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data/runs/homoScan.1/". $pdbId . " -FASTAEXECUTABLE /usr/local//fasta_lwp/fasta_lwp.pl -BREEDEREXECUTABLE /usr/local/bin/breeder -FASTATEMPDIRECTORY /usr/local//fasta_lwp///temp/  &> /data/runs/homoScan.1/db.php.log" ), $errorArray);
 
-                    // Note: turns out the above is out of date. breeder now requires many more parameters. The following worked for instance:
-                    // sudo export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/blas:/usr/local/MMB/lib  ;  /usr/local/MMB/bin/breeder   -PDBID +FF0 -DATABASE mmb    -SQLSERVER localhost -SQLEXECUTABLE  /usr/bin/mysql -SQLPASSWORD mMBc9IU5@r -USER root -SQLUSER mmbcgi  -SQLSYSTEM MySQL  -WORKINGDIRECTORY /data//runs/homoScan.1/+FF0 -ID /homoScan.1   -BREEDERMAINDIRECTORY  /home/sam/svn/breeder  -FOLDXSCRIPT /usr/local/MMB/bin/run-foldx.3.pl -FOLDXEXECUTABLE //usr/local//foldx/foldx -MMBEXECUTABLE /usr/local/MMB/bin/MMB -TEMPERATURE 273  -CHAINSINCOMPLEX A,A
                     // Now need to update $numSequenceTableEntries
                     $numSequenceTableEntries = 0; // Just being paranoid
 		    $this->stmt->execute();
@@ -1527,7 +1524,7 @@ class Database
 		    }
                 } 
                 error_log("Check 32.00");
-                for ($i = (sizeof($errorArray) -10); $i < sizeof($errorArray); $i++){ 
+                for ($i = (sizeof($errorArray) -0); $i < sizeof($errorArray); $i++){ 
                     error_log($errorArray[$i]);
                 }
 		$this->stmt->close();
@@ -1535,8 +1532,8 @@ class Database
 		return $numSequenceTableEntries;
 	}
 
-	public function getPdbChains($pdbId){
-                $this->countAndFillSequenceTable($pdbId); // Run this first. It counts the entries in the "sequence" table. If this is zero, it calls a script to fill it.
+	public function getPdbChains($pdbId,$password){
+                $this->countAndFillSequenceTable($pdbId,$password); // Run this first. It counts the entries in the "sequence" table. If this is zero, it calls a script to fill it.
 		$query="SELECT distinct chainId FROM sequence where pdbId = ?" ;
 		$this->stmt = $this->myconn->prepare($query);
 		$this->stmt->bind_param('s', $pdbId  );
