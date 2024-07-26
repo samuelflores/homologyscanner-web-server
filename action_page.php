@@ -11,6 +11,7 @@
 	window.addEventListener('popstate', function(event) {
 		window.location.href("index.php");
 	});
+        error_log("check 40");
 </script>
 <!--
 <p> POST data : </p>
@@ -27,6 +28,7 @@
         echo ">$value<";
         echo "</td>";
         echo "</tr>";
+        error_log("check 41 $key $value");
     }
 
 
@@ -46,6 +48,7 @@
         echo $value;
         echo "</td>";
         echo "</tr>";
+        error_log("check 42");
     }
 
 
@@ -53,13 +56,19 @@
 </table>
 -->
 <?php
+define('flag', TRUE); //dtypes.php will die if 'flag' is not defined.
 include ( 'generalConfig.php');
+//error_log("check 43 password should be set to mmbcgi user mysql password: >$password<");
+error_log("check 44 webpassword should be set to mmbcgi user mysql password: >".webpassword."<");
+//error_log("check 44");
 //$myLibPath = "/usr/lib/x86_64-linux-gnu/blas:/home/sam/svn/breeder/build:/usr/local/lib";
 $userMailAddress = $_POST["user_email"];
+$myLibPathToPass = myLibPath;
+error_log("check 44.1 >$myLibPathToPass<");
 $commandString = "";
 $commandString = "cd /data/runs/" . $_POST["jobName"] . "/" . $_POST["pdbId"] . " ; ";
 # Went back to installed homologyScanner:
-$commandString = "/usr/local/bin/homologyScanner    -FASTAEXECUTABLE /usr/local//fasta_lwp/fasta.pl -FASTATEMPDIRECTORY /usr/local//fasta_lwp///temp/ -BREEDEREXECUTABLE /usr/local/bin/breeder -BREEDERMAINDIRECTORY /home/sam/svn/breeder -DATABASE mmb -MMBEXECUTABLE /usr/local/bin/MMB -LASTSTAGE 1 -FOLDXSCRIPT /home/sam/svn/breeder/perl/run-foldx.3.pl -FOLDXEXECUTABLE //usr/local//foldx/foldx -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD $webpassword -USER root -SQLUSER mmbcgi -JOBLIBRARYPATH $myLibPath -REPORTINGINTERVAL 0.000001 -NUMREPORTINGINTERVALS 2 -FLEXIBILITYWINDOWOFFSET 2 -TEMPERATURE 298 -ID "
+$commandString = "/usr/local/bin/homologyScanner    -FASTAEXECUTABLE /usr/local//fasta_lwp/fasta.pl -FASTATEMPDIRECTORY /usr/local//fasta_lwp///temp/ -BREEDEREXECUTABLE /usr/local/bin/breeder -BREEDERMAINDIRECTORY /home/sam/svn/breeder -DATABASE mmb -MMBEXECUTABLE /usr/local/bin/MMB -LASTSTAGE 1 -FOLDXSCRIPT /home/sam/svn/breeder/perl/run-foldx.3.pl -FOLDXEXECUTABLE //usr/local//foldx/foldx -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD ". webpassword ." -USER root -SQLUSER mmbcgi -JOBLIBRARYPATH ". myLibPath ." -REPORTINGINTERVAL 0.000001 -NUMREPORTINGINTERVALS 2 -FLEXIBILITYWINDOWOFFSET 2 -TEMPERATURE 298 -ID "
 //$commandString = "/usr/local/bin/homologyScanner    -FASTAEXECUTABLE /usr/local//fasta_lwp/fasta.pl -FASTATEMPDIRECTORY /usr/local//fasta_lwp///temp/ -BREEDEREXECUTABLE /usr/local/bin/breeder -BREEDERMAINDIRECTORY /home/sam/svn/breeder -DATABASE mmb -MMBEXECUTABLE /usr/local/bin/MMB -LASTSTAGE 1 -FOLDXSCRIPT /home/sam/svn/breeder/perl/run-foldx.3.pl -FOLDXEXECUTABLE //usr/local//foldx/foldx -SQLSERVER localhost -SQLEXECUTABLE /usr/bin/mysql -SQLPASSWORD $webpassword -USER root -SQLUSER mmbcgi -JOBLIBRARYPATH $myLibPath -REPORTINGINTERVAL 0.000001 -NUMREPORTINGINTERVALS 2 -FLEXIBILITYWINDOWOFFSET 2 -TEMPERATURE 298 -ID "
 . $_POST["jobName"]
 . " -EMAILADDRESS "
@@ -69,17 +78,23 @@ $commandString = "/usr/local/bin/homologyScanner    -FASTAEXECUTABLE /usr/local/
 $mutationString = "";
 $i = 0;
 $myChain = "chainId" . $i;
+error_log("check 46: >$myChain<");
 $myResidue = "residueNumber" . $i;
 $mySubstituedResidueType = "substitutedResidueType" . $i;
 while ($_POST[$myChain]) 
 {
+    error_log("check 46.5 ");
     if ($i > 0) { $mutationString  .= "."; }
     $mutationString .= $_POST[$myChain] . "-" . rtrim($_POST[$myResidue]) . "-" . $_POST[$mySubstituedResidueType];
     $i++;
     $myChain = "chainId" . $i;
+    error_log("check 48: >$myChain<");
+    error_log("check 49: >".$_POST[$myChain]."<");
+
     $myResidue = "residueNumber" . $i;
     $mySubstituedResidueType = "substitutedResidueType" . $i;
 }
+error_log("check 49.2 ");
 $commandString .= $mutationString;
 # switched back to explicit working directory, rather than "."
 $commandString .= " -WORKINGDIRECTORY /data/runs/" . $_POST["jobName"] . "/" . $_POST["pdbId"];
@@ -94,16 +109,23 @@ $complexStringBackward = ",";
 
 $i = 0;
 $myComplex1Chain = "complex1ChainSelector" . $i;
+error_log("check 49.3 : >$myComplex1Chain<");
 while ($_POST[$myComplex1Chain]) {
+    error_log("check 49.4 : >".$_POST[$myComplex1Chain]."<");
     $myComplex1Chain = "complex1ChainSelector" . $i;
     //$commandString .= $_POST[$myComplex1Chain];     
     $complexStringForward .= $_POST[$myComplex1Chain];     
     $complexStringBackward .= $_POST[$myComplex1Chain];     
     $i++;
     $myComplex1Chain = "complex1ChainSelector" . $i;
+    error_log("check 49.6 : >$myComplex1Chain<");
 }
+error_log("check 50.1 : >$myComplex1Chain<");
+error_log("check 50.2 : >$complexStringForward<"); // simply "B"
+error_log("check 50.3 : >$complexStringBackward <"); // ",B"
     
 $complexStringForward .= ",";
+error_log("check 50.4 : >$complexStringForward<"); // simply "B,"
 //$commandString .= ",";
 $i = 0;
 $temp = "";
@@ -116,33 +138,42 @@ while ($_POST[$myComplex2Chain]) {
     $i++;
     $myComplex2Chain = "complex2ChainSelector" . $i;
 }
+error_log("check 52.0 : >$myComplex2Chain<"); // 
+error_log("check 52.1 : >$complexStringBackward<"); // 
 $complexStringBackward = $temp.$complexStringBackward;
+error_log("check 52.2 : >$complexStringBackward <"); // 
+error_log("check 52.4 : >$complexStringForward<"); //
 
-$complexStringBackward = 
+//$complexStringBackward = 
 
 $commandString .= $complexStringForward;
 $commandString .= " ";              
+error_log("check 52.5 : >$commandString<"); //
 
 $jobCreateTime =  time();
 mkdir("/data/runs/" .  $_POST["jobName"] . "/" . $_POST["pdbId"] ); // For new PDBs, this step is necessary.
 $homoScanJobFileNamePartial =  $_POST["jobName"] . "/" . $_POST["pdbId"] . "/" . $mutationString ."." . $jobCreateTime . ".job";
+
 $homoScanJobFileName = "/data/runs/" . $homoScanJobFileNamePartial;
 //echo "\n $homoScanJobFileName <br> \n";
 
 $homoScanJobHandle = fopen($homoScanJobFileName, 'w') or die('Cannot open file:  '.$homoScanJobFileName); //implicitly creates file
+error_log("check 52.6 : >$homoScanJobFileName< opened"); //
 $jobLogFilePartial = $_POST["jobName"] . "/" . $_POST["pdbId"] . "/" . $mutationString . "." . $jobCreateTime . ".log";
 $jobLogFile = "/data//runs/" . $jobLogFilePartial;         
 $commandString .= "  -PDBID " . $_POST["pdbId"] ;
-$commandString .= "  -SQLSYSTEM MySQL -ACCOUNT X -MOBILIZERRADIUS 0.0 -PARTITION core  ";
+$commandString .= "  -SQLSYSTEM MySQL -ACCOUNT webaccount -MOBILIZERRADIUS 0.0 -PARTITION core  ";
+//$commandString .= "  -SQLSYSTEM MySQL -ACCOUNT X -MOBILIZERRADIUS 0.0 -PARTITION core  ";
 $commandString .= " &> " . " " . $jobLogFile ; # /data//runs/" . $_POST["jobName"] . "/" . $_POST["pdbId"] . "/" . $mutationString . "." . $jobCreateTime . ".log  \n";
 // 1A22 -SQLSYSTEM MySQL -ACCOUNT X -MOBILIZERRADIUS 0.0 -PARTITION core ";
 //echo $commandString;
 # #SBATCH -P core 
 #SBATCH -P webserver 
+error_log("check 52.9 >$myLibPathToPass<");
 $headerString = <<<EOD
 #!/bin/bash -l
 #SBATCH -J $mutationString
-#SBATCH -A X
+#SBATCH -A webaccount
 #SBATCH -t 48:00:00
 #SBATCH --mem 4000
 #SBATCH --ntasks=1
@@ -154,7 +185,7 @@ $headerString = <<<EOD
 #SBATCH -o $jobLogFile.%j.slurm.out 
 # This file generated by __FILE__
 
-export LD_LIBRARY_PATH=$myLibPath;
+export LD_LIBRARY_PATH=$myLibPathToPass;
 
 EOD;
 #"xdd/usr/lib/x86_64-linux-gnu/blas:/home/sam/svn/breeder/build:/usr/local/lib
