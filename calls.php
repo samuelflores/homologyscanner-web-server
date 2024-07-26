@@ -5,10 +5,16 @@ include ('db.php');
 include ('fs.php');
 include ('utils.php');
 define('flag', TRUE);
-include ('dtypes.php');
+include ('generalConfig.php'); // This is web accessible so includes safe config parameters. In particular it defines coderootdirectory, which containts dtypes.php, which in turn contains less safe config info. It also includes coderootdirectory.'/dtypes.php' , so you don't have to.
+//#include ($coderootdirectory.'/dtypes.php');
+//include ('/home/sam/github/homologyscanner-web-server/dtypes.php');
+//include ('dtypes.php');
 
 $aResult = array();
 const LOCAL_FPATH = webrootdirectory . '/temp/';
+
+
+
 
 //$_POST['restcall'] = parse_url($_SERVER["_POST"]);
 //$_POST['arguments'] = parse_url($_SERVER["_ARGS"]);
@@ -348,7 +354,6 @@ if(!isset($aResult['error'])){
 			else {
 				$db = new Database(limshost, limsusername, limspassword, limsdatabase);
 				$db->connect();
-
 				$aResult['result'] = $db->userLogin($_POST['arguments'][0], $_POST['arguments'][1]);
 				echo $aResult['result'];
 			}
@@ -785,7 +790,7 @@ if(!isset($aResult['error'])){
 				$db = new Database(webhost, webusername, webpassword, mmbdatabase);
 				$db->connect();
 
-				$aResult['result'] = $db->getPdbChains($_POST['arguments'][0]);
+				$aResult['result'] = $db->getPdbChains($_POST['arguments'][0],webpassword);
 				$db->disconnect();
 				
 				echo json_encode($aResult['result']);
